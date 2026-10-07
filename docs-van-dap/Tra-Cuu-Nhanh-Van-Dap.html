@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cẩm Nang Vấn Đáp WEB503 - NodeJS & MongoDB</title>
+  <style>
+    :root {
+      --primary: #dc2626;
+      --primary-dark: #b91c1c;
+      --secondary: #2563eb;
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --accent: #10b981;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { background: var(--bg); color: var(--text); line-height: 1.6; padding-bottom: 60px; }
+    
+    header {
+      background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+      padding: 36px 20px;
+      text-align: center;
+      border-bottom: 2px solid var(--primary);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .badge-tag {
+      background: var(--primary);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: inline-block;
+      margin-bottom: 10px;
+    }
+    h1 { font-size: 26px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+    .subtitle { color: var(--text-muted); font-size: 14px; max-width: 700px; margin: 0 auto; }
+    
+    .container { max-width: 1000px; margin: 24px auto; padding: 0 16px; }
+    
+    .search-bar {
+      margin-bottom: 24px;
+      position: relative;
+    }
+    .search-input {
+      width: 100%;
+      padding: 16px 20px 16px 48px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: #fff;
+      font-size: 16px;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
+    }
+    .search-icon {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 18px;
+      color: var(--text-muted);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { background: #334155; color: #fff; }
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .qa-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .qa-card:hover {
+      border-color: #475569;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+    }
+    .qa-header {
+      padding: 18px 20px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      background: rgba(255,255,255,0.02);
+    }
+    .qa-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .qa-badge {
+      background: #0369a1;
+      color: #fff;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .toggle-icon { font-size: 18px; color: var(--text-muted); transition: transform 0.2s; }
+    .qa-card.open .toggle-icon { transform: rotate(180deg); color: var(--primary); }
+    
+    .qa-body {
+      padding: 0 20px 20px 20px;
+      display: none;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      margin-top: 10px;
+    }
+    .qa-card.open .qa-body { display: block; }
+    
+    .answer-box {
+      background: #090d16;
+      border-left: 4px solid var(--accent);
+      padding: 16px;
+      border-radius: 0 8px 8px 0;
+      margin-top: 12px;
+      font-size: 14.5px;
+      color: #e2e8f0;
+    }
+    .code-block {
+      background: #030712;
+      border: 1px solid #1f2937;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 13.5px;
+      color: #38bdf8;
+      overflow-x: auto;
+      margin: 10px 0;
+    }
+    .highlight { color: #facc15; font-weight: 700; }
+    .tag-note {
+      display: inline-block;
+      margin-top: 10px;
+      font-size: 12px;
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span class="badge-tag">FPT Polytechnic // WEB503 - NodeJS</span>
+    <h1>CẨM NANG VẤN ĐÁP BẢO VỆ MÔN HỌC</h1>
+    <p class="subtitle">Tổng hợp trọn bộ câu hỏi lý thuyết, luồng MVC, cơ sở dữ liệu MongoDB và giải thích từng dòng code Controller</p>
+  </header>
+
+  <div class="container">
+    <!-- Tìm kiếm -->
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" class="search-input" placeholder="Nhập từ khóa cần tìm (vd: MVC, populate, lean, try catch, create, login, params)...">
+    </div>
+
+    <!-- Phân loại Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="filterTab('all', this)">Tất cả (25+ Câu)</button>
+      <button class="tab-btn" onclick="filterTab('mvc', this)">1. MVC & Kiến trúc</button>
+      <button class="tab-btn" onclick="filterTab('db', this)">2. MongoDB & Mongoose</button>
+      <button class="tab-btn" onclick="filterTab('code', this)">3. Code Controllers</button>
+      <button class="tab-btn" onclick="filterTab('api', this)">4. RESTful & Status Code</button>
+      <button class="tab-btn" onclick="filterTab('security', this)">5. Bảo mật & Nghiệp vụ</button>
+    </div>
+
+    <!-- Danh sách Q&A -->
+    <div id="qaContainer">
+
+      <!-- CÂU 1 -->
+      <div class="qa-card open" data-group="mvc">
+        <div class="qa-header" onclick="toggleCard(this)">
+          <div class="qa-title">
+            <span class="qa-badge">CÂU 01</span>
+            Em hãy giải thích mô hình MVC trong dự án này?
+          </div>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div class="qa-body">
+          <div class="answer-box">
+            <strong>Dạ thưa cô, dự án áp dụng mô hình kiến trúc MVC phân tách rõ ràng:</strong><br>
+            • <strong class="highlight">Model (`models/`)</strong>: Định nghĩa Schema và tương tác trực tiếp với cơ sở dữ liệu MongoDB thông qua Mongoose ODM.<br>
+            • <strong class="highlight">Controller (`controllers/`)</strong>: Xử lý toàn bộ logic nghiệp vụ. Mỗi hàm nhận 2 đối số là <code>(req, res)</code>, gọi Model để lấy/lưu dữ liệu và dùng <code>res.status(...).json(...)</code> để trả kết quả về client.<br>
+            • <strong class="highlight">Route (`routes/`)</strong>: Chỉ làm nhiệm vụ điều hướng URL và phương thức HTTP (GET, POST, PUT, DELETE) vào đúng hàm trong Controller.<br>
+            • <strong class="highlight">View (`views/` & `public/`)</strong>: Giao diện người dùng SPA (Single Page Application) nhận dữ liệu JSON từ API và render mượt mà.
+          </div>
+        </div>
+      </div>
+
+      <!-- CÂU 2 -->
+      <div class="qa-card" data-group="mvc">
+        <div class="qa-header" onclick="toggleCard(this)">
+          <div class="qa-title">
+            <span class="qa-badge">CÂU 02</span>
+            Vòng đời của 1 Request (Request Lifecycle) từ Frontend đến Database?
+          </div>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div class="qa-body">
+          <div class="answer-box">
+            <strong>Luồng đi của 1 request ví dụ `GET /api/categories`:</strong><br>
+            1. Trình duyệt gửi HTTP GET request đến Server Node.js.<br>
+            2. Request đi qua `app.js` và các middleware toàn cục (cors, json, cookieParser).<br>
+            3. `app.js` chuyển giao cho file `routes/categories.js`. Khớp với route `/` gọi hàm `CategoryController.getAll`.<br>
+            4. `CategoryController.getAll` gọi `categoryModel.find()` để truy vấn MongoDB.<br>
+            5. MongoDB trả kết quả về cho Controller.<br>
+            6. Controller đóng gói kết quả và gọi <code>return res.status(200).json(categories)</code> trả về cho trình duyệt.
+          </div>
+        </div>
+      </div>
+
+      <!-- CÂU 3 -->
+      <div class="qa-card" data-group="db">
+        <div class="qa-header" onclick="toggleCard(this)">
+          <div class="qa-title">
+            <span class="qa-badge">CÂU 03</span>
+            Khóa ngoại trong Mongoose là gì? Phương thức `.populate()` hoạt động thế nào?
+          </div>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div class="qa-body">
+          <div class="answer-box">
+            Trong Mongoose, khóa ngoại được tạo bằng cách khai báo trường có kiểu <code>type: ObjectId</code> kèm thuộc tính <code>ref: 'tên_model'</code>.<br>
+            • <strong>Tác dụng của `.populate()`</strong>: Hoạt động tương tự câu lệnh <strong>JOIN</strong> trong SQL. Mongoose sẽ tự động lấy ObjectId của trường đó, tìm sang collection được tham chiếu và thay thế trường đó bằng toàn bộ thông tin chi tiết (ví dụ lấy tên danh mục thay vì chỉ hiện mã ID thô).
+          </div>
+          <div class="code-block">
+            // Ví dụ trong ProductController.js:<br>
+            const products = await productModel.find().populate('category');
+          </div>
+        </div>
+      </div>
+
+      <!-- CÂU 4 -->
+      <div class="qa-card" data-group="db">
+        <div class="qa-header" onclick="toggleCard(this)">
+          <div class="qa-title">
+            <span class="qa-badge">CÂU 04</span>
+            Tại sao tất cả các hàm Controller đều dùng `async / await`? Nếu bỏ `await` thì sao?
+          </div>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div class="qa-body">
+          <div class="answer-box">
+            • <strong>Lý do</strong>: Các thao tác đọc/ghi cơ sở dữ liệu qua Mongoose đều là tác vụ <strong>Bất đồng bộ (Asynchronous)</strong> cần thời gian xử lý qua mạng và trả về một <code>Promise</code>.<br>
+            • <strong>Từ khóa `await`</strong>: Yêu cầu Node.js tạm dừng để đợi MongoDB xử lý xong và trả dữ liệu về rồi mới thực thi tiếp các dòng bên dưới.<br>
+            • <strong>Nếu bỏ `await`</strong>: Biến nhận dữ liệu sẽ chỉ là <code>Promise { &lt;pending&gt; }</code> chưa có dữ liệu, dẫn đến gửi mảng rỗng về cho client hoặc gây lỗi ứng dụng.
+          </div>
+        </div>
+      </div>
+
+      <!-- CÂU 5 -->
+      <div class="qa-card" data-group="code">
+        <div class="qa-header" onclick="toggleCard(this)">
+          <div class="qa-title">
+            <span class="qa-badge">CÂU 05</span>
+            Giải thích từng dòng code của hàm `CategoryController.getAll`?
+          </div>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div class="qa-body">
+          <div class="code-block">
+getAll: async (req, res) => {<br>
+&nbsp;&nbsp;try {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 1. Tìm tất cả danh mục trong MongoDB, sắp xếp theo thứ tự hiển thị và ngày tạo<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// .lean() để trả về plain JS object giúp bổ sung trường productCount dễ dàng<br>
+&nbsp;&nbsp;&nbsp;&nbsp;const categories = await categoryModel.find().sort({ order: 1, createdAt: 1 }).lean();<br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 2. Đếm số lượng sản phẩm thực tế thuộc từng danh mục<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for (const c of categories) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c.id = c._id.toString();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c.productCount = await productModel.countDocuments({<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$or: [{ category: c._id }, { categoryId: c._id }]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;});<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 3. Trả về mã 200 (Thành công) cùng danh sách dữ liệu dạng JSON<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return res.status(200).json(categories);<br>
+&nbsp;&nbsp;} catch (err) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// 4. Bắt lỗi nếu có sự cố DB và trả về mã lỗi 500<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return res.status(500).json({ message: err.message });<br>
+&nbsp;&nbsp;}<br>
+}
+          </div>
+        </div>
+      </div>
+
+      <!-- CÂU 6 -->
+      <div class="qa-card" data-group="code">
+        <div class="qa-header" onclick="toggleCard(this)">
+          <div class="qa-title">
+            <span class="qa-badge">CÂU 06</span>
+            Tại sao trong `CategoryController.remove` không xóa luôn mà phải kiểm tra `countDocuments`?
+          </div>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div class="qa-body">
+          <div class="answer-box">
+            <strong>Đây là nghiệp vụ bảo toàn toàn vẹn dữ liệu (Data Integrity):</strong><br>
+            Nếu xóa một danh mục đang có chứa sản phẩm, tất cả các sản phẩm đó sẽ bị mồ côi (không còn liên kết với danh mục nào). Do đó em kiểm tra:
+            <div class="code-block">
+const productCount = await productModel.countDocuments({ category: id });<br>
+if (productCount > 0) return res.status(400).json({ message: 'Chặn xóa: Danh mục còn sản phẩm' });
+            </div>
+            Chỉ khi nào <code>productCount === 0</code> thì hệ thống mới cho phép xóa bằng <code>findByIdAndDelete(id)</code>.
+          </div>
+        </div>
+      </div>
+
+      <!-- CÂU 7 -->
+      <div class="qa-card" data-group="api">
+        <div class="qa-header" onclick="toggleCard(this)">
+          <div class="qa-title">
+            <span class="qa-badge">CÂU 07</span>
+            Phân biệt `req.params`, `req.body`, `req.query`, `req.cookies`?
+          </div>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div class="qa-body">
+          <div class="answer-box">
+            • <strong class="highlight">`req.params`</strong>: Lấy biến trên URL qua dấu hai chấm (vd: <code>/products/:id</code> ➔ <code>req.params.id</code>).<br>
+            • <strong class="highlight">`req.body`</strong>: Lấy dữ liệu gửi trong thân gói tin HTTP (dùng trong POST/PUT khi gửi form hoặc JSON).<br>
+            • <strong class="highlight">`req.query`</strong>: Lấy tham số sau dấu hỏi <code>?</code> trên URL (vd: <code>/products?grade=RG&sort=asc</code> ➔ <code>req.query.grade</code>).<br>
+            • <strong class="highlight">`req.cookies`</strong>: Đọc thông tin phiên đăng nhập lưu trong cookie trình duyệt (vd: <code>req.cookies.userId</code>).
+          </div>
+        </div>
+      </div>
+
+      <!-- CÂU 8 -->
+      <div class="qa-card" data-group="api">
+        <div class="qa-header" onclick="toggleCard(this)">
+          <div class="qa-title">
+            <span class="qa-badge">CÂU 08</span>
+            Ý nghĩa các mã HTTP Status Code: 200, 201, 400, 401, 403, 404, 500?
+          </div>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div class="qa-body">
+          <div class="answer-box">
+            • <strong>200 OK</strong>: Thành công chung (Lấy dữ liệu, cập nhật thành công).<br>
+            • <strong>201 Created</strong>: Tạo mới thành công (Thêm sản phẩm, tạo đơn hàng).<br>
+            • <strong>400 Bad Request</strong>: Dữ liệu gửi lên sai hoặc thiếu (Tên quá ngắn, giá âm).<br>
+            • <strong>401 Unauthorized</strong>: Chưa đăng nhập hoặc sai mật khẩu.<br>
+            • <strong>403 Forbidden</strong>: Bị cấm truy cập (Tài khoản đang bị khóa).<br>
+            • <strong>404 Not Found</strong>: Không tìm thấy bản ghi theo ID.<br>
+            • <strong>500 Internal Server Error</strong>: Lỗi hệ thống hoặc lỗi cơ sở dữ liệu trong khối `catch`.
+          </div>
+        </div>
+      </div>
+
+      <!-- CÂU 9 -->
+      <div class="qa-card" data-group="security">
+        <div class="qa-header" onclick="toggleCard(this)">
+          <div class="qa-title">
+            <span class="qa-badge">CÂU 09</span>
+            Quy trình trừ tồn kho khi mua hàng và hoàn kho khi hủy đơn trong `BillController`?
+          </div>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div class="qa-body">
+          <div class="answer-box">
+            • <strong>Khi đặt hàng (`create`)</strong>:<br>
+            Kiểm tra <code>prod.quantity &lt; item.quantity</code>. Nếu đủ hàng thì lưu đơn và trừ kho an toàn bằng toán tử nguyên tử của MongoDB:
+            <div class="code-block">await productModel.findByIdAndUpdate(prod._id, { $inc: { quantity: -item.quantity } });</div>
+            • <strong>Khi hủy đơn (`cancel`)</strong>:<br>
+            Duyệt qua các sản phẩm trong đơn và hoàn trả lại kho:
+            <div class="code-block">await productModel.findByIdAndUpdate(d.product, { $inc: { quantity: +d.quantity } });</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CÂU 10 -->
+      <div class="qa-card" data-group="security">
+        <div class="qa-header" onclick="toggleCard(this)">
+          <div class="qa-title">
+            <span class="qa-badge">CÂU 10</span>
+            Tại sao khi lấy danh sách user em lại dùng `.select('-password')`?
+          </div>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div class="qa-body">
+          <div class="answer-box">
+            Dấu trừ <code>-</code> trong Mongoose mang ý nghĩa loại trừ trường dữ liệu khỏi kết quả truy vấn. Mật khẩu là thông tin nhạy cảm tuyệt đối, do đó <code>.select('-password')</code> đảm bảo mật khẩu không bao giờ bị lộ ra mạng hoặc truyền về phía giao diện người dùng.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function toggleCard(header) {
+      const card = header.parentElement;
+      card.classList.toggle('open');
+    }
+
+    function filterTab(group, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const cards = document.querySelectorAll('.qa-card');
+      cards.forEach(card => {
+        if (group === 'all' || card.dataset.group === group) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+      const q = e.target.value.toLowerCase().trim();
+      const cards = document.querySelectorAll('.qa-card');
+
+      cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        if (text.includes(q)) {
+          card.style.display = 'block';
+          card.classList.add('open');
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+import {transaction,rows} from '../config/database.ts';
+import * as model from '../models/product.model.ts';
+import {productInput,HttpError} from '../utils/validation.ts';
+export const createProduct=(body:Record<string,unknown>)=>{const p=productInput(body);return transaction(async db=>{const id=await model.insertProduct(db,p);return model.findProduct(id,db);});};
+export const editProduct=(id:number,body:Record<string,unknown>)=>{const p=productInput(body);return transaction(async db=>{const found=await rows(db,'SELECT product_id FROM products WHERE product_id=? FOR UPDATE',[id]);if(!found.length)throw new HttpError(404,'Không tìm thấy sản phẩm.');await rows(db,'SELECT variant_id FROM product_variants WHERE product_id=? ORDER BY variant_id FOR UPDATE',[id]);const old=await model.findProduct(id,db);if(p.stock<old.reserved)throw new HttpError(409,'Tồn kho không được thấp hơn số lượng đang giữ.');await model.updateProduct(db,id,p);return model.findProduct(id,db);});};
+export const deleteProduct=(id:number)=>transaction(async db=>{const found=await rows(db,'SELECT product_id FROM products WHERE product_id=? FOR UPDATE',[id]);if(!found.length)throw new HttpError(404,'Không tìm thấy sản phẩm.');await model.archiveProduct(db,id);return{ok:true,message:'Sản phẩm đã ngừng bán, lịch sử vẫn được giữ.'};});

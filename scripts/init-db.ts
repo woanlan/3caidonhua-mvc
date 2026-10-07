@@ -1,0 +1,4 @@
+import mysql from 'mysql2/promise';import {readFile} from 'node:fs/promises';
+const name=process.env.DB_NAME||'gundamshop_mvc';if(!/^[a-zA-Z0-9_]+$/.test(name))throw new Error('DB_NAME chỉ dùng chữ, số và gạch dưới.');
+const c=await mysql.createConnection({host:process.env.DB_HOST||'127.0.0.1',port:Number(process.env.DB_PORT||3306),user:process.env.DB_USER||'root',password:process.env.DB_PASSWORD||'',multipleStatements:true,charset:'utf8mb4'});
+try{await c.query('CREATE DATABASE IF NOT EXISTS `'+name+'` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');await c.query('USE `'+name+'`');for(const file of ['schema.sql','seed.sql'])await c.query(await readFile(new URL('../database/'+file,import.meta.url),'utf8'));console.log('Database initialized without deleting existing records.');}finally{await c.end();}
