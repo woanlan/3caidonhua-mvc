@@ -516,22 +516,23 @@ function saveWishlist() {
 }
 
 function isWishlisted(productId) {
-  const pid = Number(productId);
-  return wishlist.some(id => Number(id) === pid);
+  if (!productId) return false;
+  const sId = String(productId).trim();
+  return wishlist.some(id => String(id).trim() === sId);
 }
 
 function toggleWishlist(productId) {
-  const pid = Number(productId);
-  if (!pid) return false;
+  if (!productId) return false;
+  const sId = String(productId).trim();
 
-  const idx = wishlist.findIndex(id => Number(id) === pid);
+  const idx = wishlist.findIndex(id => String(id).trim() === sId);
   let added = false;
   if (idx > -1) {
     wishlist.splice(idx, 1);
     added = false;
     toast('Đã xóa khỏi danh sách yêu thích');
   } else {
-    wishlist.push(pid);
+    wishlist.push(sId);
     added = true;
     toast('Đã lưu vào danh sách yêu thích ❤️');
   }
@@ -562,13 +563,17 @@ function updateWishlistBadges() {
   const count = wishlist.length;
   const badge = $('#wishlist-count');
   if (badge) {
-    badge.textContent = count;
+    badge.textContent = String(count);
+  }
+  const mobBadge = $('#mobile-wishlist-count');
+  if (mobBadge) {
+    mobBadge.textContent = String(count);
   }
 }
 
 function updateWishlistHeartButtons() {
   document.querySelectorAll('[data-wishlist-toggle]').forEach(btn => {
-    const pid = Number(btn.getAttribute('data-wishlist-toggle'));
+    const pid = btn.getAttribute('data-wishlist-toggle');
     const active = isWishlisted(pid);
     btn.classList.toggle('active', active);
     btn.setAttribute('title', active ? 'Bỏ yêu thích' : 'Thêm vào yêu thích');
@@ -584,13 +589,16 @@ function renderWishlistPage() {
   if (!container) return;
 
   const list = (products && products.length) ? products : DEFAULT_PRODUCTS;
-  const wishlistItems = wishlist.map(id => list.find(p => Number(p.id || p._id) === Number(id))).filter(Boolean);
+  const wishlistItems = wishlist.map(id => {
+    const sId = String(id).trim();
+    return list.find(p => String(p.id || p._id || p.variantId).trim() === sId);
+  }).filter(Boolean);
 
-  const totalCount = wishlistItems.length;
+  const totalCount = wishlist.length;
   const totalEstimatedPrice = wishlistItems.reduce((sum, p) => sum + (p.price || 0), 0);
 
   const recommendedItems = list
-    .filter(p => !wishlist.some(id => Number(id) === Number(p.id || p._id)))
+    .filter(p => !wishlist.some(id => String(id).trim() === String(p.id || p._id || p.variantId).trim()))
     .slice(0, 4);
 
   let contentHtml = '';
@@ -1591,7 +1599,10 @@ function renderAccountTabContent(tabKey, userOrders) {
 
   if (tabKey === 'wishlist') {
     const list = (products && products.length) ? products : DEFAULT_PRODUCTS;
-    const wishlistItems = wishlist.map(id => list.find(p => Number(p.id || p._id) === Number(id))).filter(Boolean);
+    const wishlistItems = wishlist.map(id => {
+      const sId = String(id).trim();
+      return list.find(p => String(p.id || p._id || p.variantId).trim() === sId);
+    }).filter(Boolean);
     if (!wishlistItems.length) {
       return `
         <div class="empty">
@@ -3558,11 +3569,12 @@ async function handleClick(target) {
     const list = (products && products.length) ? products : DEFAULT_PRODUCTS;
     let addedCount = 0;
     for (const wid of wishlist) {
-      const p = list.find(x => Number(x.id || x._id) === Number(wid));
+      const sId = String(wid).trim();
+      const p = list.find(x => String(x.id || x._id || x.variantId).trim() === sId);
       if (p) {
         const inStock = ((p.stock !== undefined ? p.stock : p.quantity) ?? 0) > 0;
         if (inStock) {
-          const ok = await addToCart(p.id, 1);
+          const ok = await addToCart(p.id || p._id || p.variantId, 1);
           if (ok) addedCount++;
         }
       }
@@ -4385,6 +4397,26 @@ if (video && $('#video-toggle')) {
 window.addEventListener('hashchange', () => { route().catch(showError); });
 
 document.addEventListener('click', e => {
+  const wishToggle = e.target.closest('[data-wishlist-toggle]');
+  if (wishToggle) {
+    e.preventDefault();
+    e.stopPropagation();
+    const pid = wishToggle.getAttribute('data-wishlist-toggle');
+    toggleWishlist(pid);
+    wishToggle.classList.add('pulse');
+    setTimeout(() => wishToggle.classList.remove('pulse'), 450);
+    return;
+  }
+
+  const wishRemove = e.target.closest('[data-wishlist-remove]');
+  if (wishRemove) {
+    e.preventDefault();
+    e.stopPropagation();
+    const pid = wishRemove.getAttribute('data-wishlist-remove');
+    toggleWishlist(pid);
+    return;
+  }
+
   const link = e.target.closest('a[href^="#"]');
   if (link) {
     const targetHash = link.getAttribute('href');
