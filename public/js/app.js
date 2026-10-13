@@ -29,7 +29,7 @@ const DEFAULT_PRODUCTS = [
   { id: 'p26', name: 'One Piece Grand Ship Collection Red Force', slug: 'onepiece-red-force', description: 'Chiến thuyền Red Force oai vệ của Tứ Hoàng Shanks Tóc Đỏ thuộc dòng Grand Ship Collection.', categoryId: 3, brandId: 1, gradeId: null, seriesId: 5, scale: 'Non-scale', status: 'active', grade: '', category: 'Mô hình One Piece', brand: 'Bandai Spirits', series: 'One Piece Grand Ship', variantId: 'p26', sku: 'OP-RED-FORCE', price: 520000, stock: 18, reserved: 0, image: '/assets/products/op-red-force.jpg' }
 ];
 
-let products = [], cart = [], orders = [], adminProducts = [], adminUsers = [];
+let products = [], cart = [], wishlist = [], orders = [], adminProducts = [], adminUsers = [];
 let metadata = { categories: [], brands: [], grades: [], series: [] };
 let grade = 'all', tab = 'overview', pending = false, adminReady = false;
 let catalogPage = 1, catalogPageSize = 24;
@@ -258,8 +258,12 @@ function renderProductCardHtml(p) {
   const oldPrice = p.originalPrice || Math.round((p.price / (1 - disc / 100)) / 10000) * 10000;
   const brandName = esc(p.brand || 'Bandai Spirits');
   const gradeLabel = esc(p.grade || 'MÔ HÌNH');
+  const wishActive = isWishlisted(pid);
 
   return `<article class="product-card">
+    <button type="button" class="card-wishlist-btn ${wishActive ? 'active' : ''}" data-wishlist-toggle="${pid}" aria-label="Yêu thích ${esc(p.name)}" title="${wishActive ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}">
+      <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+    </button>
     <a href="#product-${pid}" class="product-image">
       <img src="${imgSrc}" loading="lazy" width="300" height="300" alt="${esc(p.name)}" onerror="this.src='/assets/hero-poster.jpg'">
       <span class="gdc-discount-badge">-${disc}%</span>
@@ -472,12 +476,239 @@ function renderProductDetailPage(id) {
             <button type="button" class="pdetail-btn-add-cart" data-pdetail-cart="${p.id}" ${inStock ? '' : 'disabled'}>
               THÊM VÀO GIỎ HÀNG
             </button>
+            <button type="button" class="pdetail-btn-wishlist ${isWishlisted(p.id) ? 'active' : ''}" data-wishlist-toggle="${p.id}" aria-label="Lưu vào yêu thích" title="${isWishlisted(p.id) ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}">
+              <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+              <span>${isWishlisted(p.id) ? 'ĐÃ YÊU THÍCH' : 'LƯU VÀO YÊU THÍCH'}</span>
+            </button>
           </div>
         </div>
       </div>
     </div>
   `;
   window.scrollTo(0, 0);
+}
+
+/* ==========================================================================
+   WISHLIST (SẢN PHẨM YÊU THÍCH) - ADIDAS STYLE LOGIC
+   ========================================================================== */
+const WISHLIST_STORAGE_KEY = '3caidonhua_wishlist';
+
+function loadWishlist() {
+  try {
+    const raw = localStorage.getItem(WISHLIST_STORAGE_KEY);
+    wishlist = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(wishlist)) wishlist = [];
+  } catch (e) {
+    wishlist = [];
+  }
+  updateWishlistBadges();
+  return wishlist;
+}
+
+function saveWishlist() {
+  try {
+    localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(wishlist));
+  } catch (e) {
+    console.error('Cannot save wishlist:', e);
+  }
+  updateWishlistBadges();
+  updateWishlistHeartButtons();
+}
+
+function isWishlisted(productId) {
+  const pid = Number(productId);
+  return wishlist.some(id => Number(id) === pid);
+}
+
+function toggleWishlist(productId) {
+  const pid = Number(productId);
+  if (!pid) return false;
+
+  const idx = wishlist.findIndex(id => Number(id) === pid);
+  let added = false;
+  if (idx > -1) {
+    wishlist.splice(idx, 1);
+    added = false;
+    toast('Đã xóa khỏi danh sách yêu thích');
+  } else {
+    wishlist.push(pid);
+    added = true;
+    toast('Đã lưu vào danh sách yêu thích ❤️');
+  }
+  saveWishlist();
+
+  // Pulse animation for header badge
+  const badge = $('#wishlist-count');
+  if (badge) {
+    badge.classList.remove('bump');
+    void badge.offsetWidth;
+    badge.classList.add('bump');
+    setTimeout(() => badge.classList.remove('bump'), 300);
+  }
+
+  // If user is currently viewing #wishlist, re-render it
+  if (location.hash === '#wishlist') {
+    renderWishlistPage();
+  }
+  // If user is viewing #account on wishlist tab, re-render
+  if (location.hash === '#account' && currentAccountTab === 'wishlist') {
+    void renderAccountPage('wishlist');
+  }
+
+  return added;
+}
+
+function updateWishlistBadges() {
+  const count = wishlist.length;
+  const badge = $('#wishlist-count');
+  if (badge) {
+    badge.textContent = count;
+  }
+}
+
+function updateWishlistHeartButtons() {
+  document.querySelectorAll('[data-wishlist-toggle]').forEach(btn => {
+    const pid = Number(btn.getAttribute('data-wishlist-toggle'));
+    const active = isWishlisted(pid);
+    btn.classList.toggle('active', active);
+    btn.setAttribute('title', active ? 'Bỏ yêu thích' : 'Thêm vào yêu thích');
+    const textSpan = btn.querySelector('span');
+    if (textSpan) {
+      textSpan.textContent = active ? 'ĐÃ YÊU THÍCH' : 'LƯU VÀO YÊU THÍCH';
+    }
+  });
+}
+
+function renderWishlistPage() {
+  const container = $('#page-wishlist');
+  if (!container) return;
+
+  const list = (products && products.length) ? products : DEFAULT_PRODUCTS;
+  const wishlistItems = wishlist.map(id => list.find(p => Number(p.id || p._id) === Number(id))).filter(Boolean);
+
+  const totalCount = wishlistItems.length;
+  const totalEstimatedPrice = wishlistItems.reduce((sum, p) => sum + (p.price || 0), 0);
+
+  const recommendedItems = list
+    .filter(p => !wishlist.some(id => Number(id) === Number(p.id || p._id)))
+    .slice(0, 4);
+
+  let contentHtml = '';
+
+  if (totalCount === 0) {
+    contentHtml = `
+      <div class="wishlist-empty-box">
+        <div class="wishlist-empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+        </div>
+        <h2 class="wishlist-empty-title">Danh sách yêu thích của bạn đang trống</h2>
+        <p class="wishlist-empty-desc">
+          Bạn chưa lưu mô hình nào. Hãy duyệt qua bộ sưu tập Gunpla đỉnh cao từ HG, RG đến MG & PG để chọn ra cỗ máy chiến đấu ưng ý nhất của bạn!
+        </p>
+        <a href="#catalog" class="wishlist-empty-btn">
+          <span>Khám phá bộ sưu tập Gunpla</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      </div>
+    `;
+  } else {
+    contentHtml = `
+      <div class="wishlist-toolbar">
+        <div class="wishlist-count-badge-text">
+          Đang hiển thị <strong>${totalCount}</strong> sản phẩm trong danh sách
+        </div>
+        <div class="wishlist-toolbar-actions">
+          <button type="button" class="wishlist-btn-add-all" data-wishlist-add-all>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <span>Thêm tất cả vào giỏ hàng</span>
+          </button>
+          <button type="button" class="wishlist-btn-clear" data-wishlist-clear>
+            Xóa tất cả
+          </button>
+        </div>
+      </div>
+
+      <div class="wishlist-grid">
+        ${wishlistItems.map(p => {
+          const pid = p.id || p._id || p.variantId;
+          const inStock = ((p.stock !== undefined ? p.stock : p.quantity) ?? 0) > 0;
+          const imgSrc = esc(p.image || '/assets/hero-poster.jpg');
+          const disc = getProductDiscount(p);
+          const oldPrice = p.originalPrice || Math.round((p.price / (1 - disc / 100)) / 10000) * 10000;
+          const gradeLabel = esc(p.grade || 'MÔ HÌNH');
+          const seriesName = esc(p.series || p.brand || 'Bandai Spirits');
+
+          return `
+            <div class="wishlist-card">
+              <div class="wishlist-card-img-wrap">
+                <a href="#product-${pid}">
+                  <img class="wishlist-card-img" src="${imgSrc}" alt="${esc(p.name)}" loading="lazy" onerror="this.src='/assets/hero-poster.jpg'">
+                </a>
+                <span class="wishlist-grade-tag">${gradeLabel}</span>
+                <button type="button" class="wishlist-remove-btn" data-wishlist-remove="${pid}" aria-label="Xóa khỏi yêu thích" title="Xóa khỏi danh sách">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              </div>
+              <div class="wishlist-card-body">
+                <div class="wishlist-card-series">${seriesName}</div>
+                <a href="#product-${pid}" class="wishlist-card-title" title="${esc(p.name)}">${esc(p.name)}</a>
+                <div class="wishlist-card-pricing">
+                  <span class="wishlist-card-price">${money(p.price)}</span>
+                  ${disc > 0 ? `<span class="wishlist-card-original-price">${money(oldPrice)}</span>` : ''}
+                </div>
+                <div class="wishlist-card-actions">
+                  <button type="button" class="wishlist-btn-cart" data-wishlist-add-cart="${pid}" ${inStock ? '' : 'disabled'}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                    <span>${inStock ? 'Thêm giỏ +' : 'Hết hàng'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  const recommendedSectionHtml = recommendedItems.length ? `
+    <div class="wishlist-recommended">
+      <h3 class="wishlist-recommended-title">Gợi ý dành riêng cho bạn</h3>
+      <div class="product-grid">
+        ${recommendedItems.map(p => renderProductCardHtml(p)).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  container.innerHTML = `
+    <div class="wishlist-page-container">
+      <div class="wishlist-hero-banner">
+        <div>
+          <h1 class="wishlist-hero-title">
+            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            Sản Phẩm Yêu Thích
+          </h1>
+          <p class="wishlist-hero-subtitle">
+            Kho lưu trữ Gunpla mơ ước lấy cảm hứng từ phong cách Wishlist cao cấp của Adidas.
+          </p>
+        </div>
+        <div class="wishlist-hero-stats">
+          <div class="wishlist-stat-box">
+            <div class="wishlist-stat-label">Đã lưu</div>
+            <div class="wishlist-stat-value highlight">${totalCount} <span style="font-size:12px;color:#aaa;font-weight:normal;">mô hình</span></div>
+          </div>
+          <div class="wishlist-stat-box">
+            <div class="wishlist-stat-label">Tổng giá trị</div>
+            <div class="wishlist-stat-value">${money(totalEstimatedPrice)}</div>
+          </div>
+        </div>
+      </div>
+
+      ${contentHtml}
+      ${recommendedSectionHtml}
+    </div>
+  `;
 }
 
 function loginPanel(register = false) {
@@ -1358,6 +1589,34 @@ function renderAccountTabContent(tabKey, userOrders) {
     `;
   }
 
+  if (tabKey === 'wishlist') {
+    const list = (products && products.length) ? products : DEFAULT_PRODUCTS;
+    const wishlistItems = wishlist.map(id => list.find(p => Number(p.id || p._id) === Number(id))).filter(Boolean);
+    if (!wishlistItems.length) {
+      return `
+        <div class="empty">
+          <strong>Chưa có sản phẩm yêu thích</strong>
+          Bạn chưa lưu mô hình Gunpla nào vào danh sách yêu thích.
+          <div style="margin-top:16px;">
+            <a href="#catalog" class="button primary">Khám phá mô hình ngay →</a>
+          </div>
+        </div>
+      `;
+    }
+    return `
+      <div class="account-wishlist-toolbar">
+        <span style="font-size:15px;font-weight:700;color:#ffffff;">Danh sách mô hình đã lưu (${wishlistItems.length} sản phẩm):</span>
+        <button type="button" class="wishlist-btn-add-all" data-wishlist-add-all>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          Thêm tất cả vào giỏ
+        </button>
+      </div>
+      <div class="account-wishlist-grid">
+        ${wishlistItems.map(p => renderProductCardHtml(p)).join('')}
+      </div>
+    `;
+  }
+
   // Default: 'orders'
   if (!user) {
     return `
@@ -1453,6 +1712,10 @@ async function renderAccountPage(activeTab) {
         <button type="button" class="account-tab-btn ${currentAccountTab === 'tracking' ? 'active' : ''}" data-acc-tab="tracking" style="display:inline-flex;align-items:center;gap:7px;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <span>Tra cứu lộ trình đơn hàng</span>
+        </button>
+        <button type="button" class="account-tab-btn ${currentAccountTab === 'wishlist' ? 'active' : ''}" data-acc-tab="wishlist" style="display:inline-flex;align-items:center;gap:7px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span>Sản phẩm yêu thích (${wishlist.length})</span>
         </button>
         ${user ? `
           <button type="button" class="account-tab-btn ${currentAccountTab === 'profile' ? 'active' : ''}" data-acc-tab="profile" style="display:inline-flex;align-items:center;gap:7px;">
@@ -3112,6 +3375,8 @@ async function route() {
     activePage = 'grades';
   } else if (hash === '#about') {
     activePage = 'about';
+  } else if (hash === '#wishlist') {
+    activePage = 'wishlist';
   } else if (hash === '#checkout') {
     activePage = 'checkout';
   } else if (isAuth) {
@@ -3126,6 +3391,7 @@ async function route() {
   const pageCatalog = $('#page-catalog');
   const pageGrades = $('#page-grades');
   const pageAbout = $('#page-about');
+  const pageWishlist = $('#page-wishlist');
   const pageCheckout = $('#page-checkout');
   const pageProductDetail = $('#page-product-detail');
   const pageAuth = $('#page-auth');
@@ -3135,6 +3401,7 @@ async function route() {
   if (pageCatalog) pageCatalog.hidden = activePage !== 'catalog';
   if (pageGrades) pageGrades.hidden = activePage !== 'grades';
   if (pageAbout) pageAbout.hidden = activePage !== 'about';
+  if (pageWishlist) pageWishlist.hidden = activePage !== 'wishlist';
   if (pageCheckout) pageCheckout.hidden = activePage !== 'checkout';
   if (pageProductDetail) pageProductDetail.hidden = activePage !== 'product-detail';
   if (pageAuth) pageAuth.hidden = activePage !== 'auth';
@@ -3143,6 +3410,9 @@ async function route() {
   if (activePage === 'product-detail') {
     if (video) video.pause();
     renderProductDetailPage(activeProductId);
+  } else if (activePage === 'wishlist') {
+    if (video) video.pause();
+    renderWishlistPage();
   } else if (activePage === 'checkout') {
     if (video) video.pause();
     renderDedicatedCheckout();
@@ -3167,7 +3437,7 @@ async function route() {
 
   document.querySelectorAll('.desktop-nav > a, .desktop-nav > .nav-dropdown-item > a.nav-dropdown-trigger, .mobile-menu a').forEach(a => {
     const href = a.getAttribute('href');
-    const isCurrent = (href === '#' + activePage) || (activePage === 'home' && href === '#home') || (activePage === 'account' && (href === '#tracking' || href === '#account'));
+    const isCurrent = (href === '#' + activePage) || (activePage === 'home' && href === '#home') || (activePage === 'account' && (href === '#tracking' || href === '#account')) || (activePage === 'wishlist' && href === '#wishlist');
     a.classList.toggle('active', Boolean(isCurrent));
   });
   document.querySelectorAll('.mega-column a').forEach(a => a.classList.remove('active'));
@@ -3251,6 +3521,68 @@ async function handleClick(target) {
     const catSection = $('#catalog') || $('#page-catalog');
     if (catSection) {
       window.scrollTo({ top: catSection.offsetTop - 50, behavior: 'smooth' });
+    }
+    return;
+  }
+
+  // Wishlist actions
+  const wishToggleBtn = target.dataset.wishlistToggle ? target : target.closest('[data-wishlist-toggle]');
+  if (wishToggleBtn) {
+    const pid = wishToggleBtn.dataset.wishlistToggle;
+    toggleWishlist(pid);
+    wishToggleBtn.classList.add('pulse');
+    setTimeout(() => wishToggleBtn.classList.remove('pulse'), 450);
+    return;
+  }
+
+  const wishRemoveBtn = target.dataset.wishlistRemove ? target : target.closest('[data-wishlist-remove]');
+  if (wishRemoveBtn) {
+    const pid = wishRemoveBtn.dataset.wishlistRemove;
+    toggleWishlist(pid);
+    return;
+  }
+
+  const wishAddCartBtn = target.dataset.wishlistAddCart ? target : target.closest('[data-wishlist-add-cart]');
+  if (wishAddCartBtn) {
+    const pid = wishAddCartBtn.dataset.wishlistAddCart;
+    await addToCart(pid);
+    return;
+  }
+
+  const wishAddAllBtn = (target.dataset.wishlistAddAll !== undefined) ? target : target.closest('[data-wishlist-add-all]');
+  if (wishAddAllBtn) {
+    if (!wishlist.length) {
+      toast('Danh sách yêu thích của bạn đang trống.');
+      return;
+    }
+    const list = (products && products.length) ? products : DEFAULT_PRODUCTS;
+    let addedCount = 0;
+    for (const wid of wishlist) {
+      const p = list.find(x => Number(x.id || x._id) === Number(wid));
+      if (p) {
+        const inStock = ((p.stock !== undefined ? p.stock : p.quantity) ?? 0) > 0;
+        if (inStock) {
+          const ok = await addToCart(p.id, 1);
+          if (ok) addedCount++;
+        }
+      }
+    }
+    if (addedCount > 0) {
+      toast(`Đã thêm ${addedCount} sản phẩm yêu thích vào giỏ hàng! 🛒`);
+    } else {
+      toast('Không có sản phẩm nào còn hàng để thêm vào giỏ.');
+    }
+    return;
+  }
+
+  const wishClearBtn = (target.dataset.wishlistClear !== undefined) ? target : target.closest('[data-wishlist-clear]');
+  if (wishClearBtn) {
+    if (!wishlist.length) return;
+    if (confirm('Bạn có chắc chắn muốn xóa toàn bộ sản phẩm khỏi danh sách yêu thích?')) {
+      wishlist = [];
+      saveWishlist();
+      renderWishlistPage();
+      toast('Đã làm trống danh sách yêu thích.');
     }
     return;
   }
@@ -3889,6 +4221,13 @@ panel?.addEventListener('close', () => { document.body.style.overflow = ''; });
 panel?.addEventListener('click', e => { if (e.target === panel) panel.close(); });
 
 $('#cart-button')?.addEventListener('click', () => run(async () => { await refreshCart(); cartPanel(); }));
+$('#wishlist-button')?.addEventListener('click', () => {
+  if (location.hash === '#wishlist') {
+    void route();
+  } else {
+    location.hash = '#wishlist';
+  }
+});
 $('#account-button')?.addEventListener('click', () => {
   if (user) {
     if (location.hash === '#account') {
@@ -4086,6 +4425,7 @@ document.addEventListener('submit', e => {
 });
 
 async function init() {
+  loadWishlist();
   try {
     await refreshProducts();
   } catch (e) {

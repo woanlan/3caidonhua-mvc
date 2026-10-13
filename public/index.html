@@ -77,6 +77,12 @@
             <button class="icon-button" id="account-button" aria-label="Đơn hàng &amp; Tài khoản" title="Tài khoản">
                 <svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg>
             </button>
+            <button class="icon-button wishlist-toggle" id="wishlist-button" aria-label="Sản phẩm yêu thích" title="Danh sách yêu thích">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+                <span class="wishlist-count" id="wishlist-count">0</span>
+            </button>
             <button class="cart-toggle" id="cart-button" aria-label="Mở giỏ hàng" title="Giỏ hàng">
                 <svg viewBox="0 0 24 24"><path d="M5 7h14l1 14H4L5 7Z M8 8V6a4 4 0 0 1 8 0v2"/></svg>
                 <span class="cart-count">0</span>
@@ -88,6 +94,7 @@
     <nav class="mobile-menu" id="mobile-menu" hidden>
         <a href="#home">Trang chủ</a>
         <a href="#catalog">Bộ sưu tập Gunpla</a>
+        <a href="#wishlist">Sản phẩm yêu thích ❤️</a>
         <a href="#grades">Phân cấp Grade</a>
         <a href="#about">Về Studio</a>
         <a href="#tracking">Theo dõi đơn hàng</a>
@@ -320,6 +327,11 @@
         <div class="page-view" id="page-account" hidden>
             <!-- Được render động bằng renderAccountPage() trong app.js -->
         </div>
+
+        <!-- TRANG 9: DANH SÁCH YÊU THÍCH (#wishlist) -->
+        <div class="page-view" id="page-wishlist" hidden>
+            <!-- Được render động bằng renderWishlistPage() trong app.js -->
+        </div>
     </main>
 
     <main id="admin" hidden></main>
@@ -334,6 +346,7 @@
         </div>
         <div class="footer-links">
             <a href="#catalog">Sản phẩm</a>
+            <a href="#wishlist">Sản phẩm yêu thích ❤️</a>
             <a href="#grades">Phân cấp Grade</a>
             <a href="#tracking">Theo dõi đơn hàng</a>
             <a href="#login">Đăng nhập / Đăng ký</a>
