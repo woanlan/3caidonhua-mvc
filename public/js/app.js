@@ -1,4 +1,4 @@
-import { api, user, setUser, ApiError } from './api.js';
+import { api, user, setUser, ApiError, uploadFile } from './api.js';
 
 const DEFAULT_PRODUCTS = [
   { id: 'p1', name: 'SD Gundam RX-78-2 EX-Standard', slug: 'sd-rx78-2', description: 'Mô hình SD Gundam thiết kế dễ thương, dễ lắp ráp, phù hợp cho người mới bắt đầu.', categoryId: 1, brandId: 1, gradeId: 1, seriesId: 1, scale: 'Non-scale', status: 'active', grade: 'SD', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p1', sku: 'SD-RX78', price: 160000, stock: 25, reserved: 0, image: '/assets/products/sd-rx78.jpg' },
@@ -1575,24 +1575,54 @@ function renderAccountTabContent(tabKey, userOrders) {
 
   if (tabKey === 'profile') {
     if (!user) return '<div class="empty"><strong>Vui lòng đăng nhập</strong> để chỉnh sửa thông tin cá nhân.</div>';
+    const currentJwt = (typeof localStorage !== 'undefined') ? localStorage.getItem('access_token') : '';
     return `
-      <div class="account-order-card" style="max-width:600px;">
-        <h2 style="font-size:18px;font-weight:800;color:#ffffff;margin-bottom:16px;">Cập nhật thông tin nhận hàng</h2>
-        <form id="profile-form" class="form-grid">
-          <label>Họ và tên
-            <input name="name" value="${esc(user.name)}" required maxlength="100">
-          </label>
-          <label>Email tài khoản
-            <input value="${esc(user.email)}" readonly style="background:#080a0e;cursor:not-allowed;color:#6b7280;">
-          </label>
-          <label>Số điện thoại nhận hàng
-            <input name="phone" type="tel" value="${esc(user.phone || '')}" placeholder="0907652267" required pattern="[0-9+ ()-]{9,20}">
-          </label>
-          <label>Địa chỉ giao hàng mặc định
-            <input name="address" value="${esc(user.address || '')}" placeholder="Số nhà, tên đường, Quận/Huyện, TP" required maxlength="500">
-          </label>
-          <button type="submit" class="auth-btn-submit" style="margin-top:12px;">Lưu thông tin</button>
-        </form>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:960px;align-items:start;">
+        <div class="account-order-card">
+          <h2 style="font-size:18px;font-weight:800;color:#ffffff;margin-bottom:16px;">Cập nhật thông tin nhận hàng</h2>
+          <form id="profile-form" class="form-grid">
+            <label>Họ và tên
+              <input name="name" value="${esc(user.name)}" required maxlength="100">
+            </label>
+            <label>Email tài khoản
+              <input value="${esc(user.email)}" readonly style="background:#080a0e;cursor:not-allowed;color:#6b7280;">
+            </label>
+            <label>Số điện thoại nhận hàng
+              <input name="phone" type="tel" value="${esc(user.phone || '')}" placeholder="0907652267" required pattern="[0-9+ ()-]{9,20}">
+            </label>
+            <label>Địa chỉ giao hàng mặc định
+              <input name="address" value="${esc(user.address || '')}" placeholder="Số nhà, tên đường, Quận/Huyện, TP" required maxlength="500">
+            </label>
+            <button type="submit" class="auth-btn-submit" style="margin-top:12px;">Lưu thông tin</button>
+          </form>
+        </div>
+
+        <div class="account-order-card" style="border:1px solid rgba(56,189,248,0.3);background:radial-gradient(ellipse at top right, rgba(56,189,248,0.08), transparent 70%), var(--card-bg);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <h3 style="font-size:16px;font-weight:700;color:#38bdf8;margin:0;display:flex;align-items:center;gap:8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Phiên Xác Thực JWT &amp; Bảo Mật
+            </h3>
+            <span class="badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);font-size:11px;">JWT Active</span>
+          </div>
+          <p style="font-size:12.5px;color:#94a3b8;line-height:1.6;margin-bottom:14px;">
+            Hệ thống áp dụng chuẩn bảo mật <strong>JsonWebToken (JWT) Bearer</strong> kết hợp mã hóa <strong>Bcrypt</strong> theo đúng chương trình học WEB503. Access Token tự động đính kèm vào mọi yêu cầu API.
+          </p>
+          <div style="background:rgba(0,0,0,0.5);border-radius:8px;padding:12px;font-family:var(--mono);font-size:11px;color:#cbd5e1;word-break:break-all;margin-bottom:14px;border:1px solid rgba(255,255,255,0.06);">
+            <div style="color:#38bdf8;margin-bottom:4px;font-size:10.5px;text-transform:uppercase;font-weight:700;">Access Token (Bearer Header):</div>
+            <div style="max-height:64px;overflow-y:auto;">${currentJwt ? esc(currentJwt) : '<span style="color:#e2e8f0;">Phiên đăng nhập đã cấp token. Đăng xuất và đăng nhập lại để làm mới.</span>'}</div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button type="button" class="button secondary" data-test-jwt-profile style="font-size:12px;padding:8px 14px;display:inline-flex;align-items:center;gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              Kiểm tra Token (GET /profile-jwt)
+            </button>
+            <button type="button" class="button secondary" data-refresh-jwt style="font-size:12px;padding:8px 14px;display:inline-flex;align-items:center;gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              Làm mới Token (Refresh Token)
+            </button>
+          </div>
+        </div>
       </div>
     `;
   }
@@ -1878,6 +1908,7 @@ function renderAdmin() {
   if (tab === 'products') { tabTitle = 'Quản lý kho hàng &amp; Sản phẩm'; tabBreadcrumb = 'Quản lý sản phẩm'; }
   if (tab === 'orders') { tabTitle = 'Quản lý &amp; Xử lý đơn hàng'; tabBreadcrumb = 'Quản lý đơn hàng'; }
   if (tab === 'users') { tabTitle = 'Quản lý tài khoản người dùng'; tabBreadcrumb = 'Quản lý tài khoản'; }
+  if (tab === 'system') { tabTitle = 'Dịch vụ Hệ thống &amp; Gửi Email (Nodemailer / Multer / JWT)'; tabBreadcrumb = 'Email &amp; Hệ thống'; }
 
   const q = (adminSearchQuery || '').toLowerCase().trim();
 
@@ -2767,6 +2798,122 @@ function renderAdmin() {
       </div>
       ${usersTableHtml}
     `;
+  } else if (tab === 'system') {
+    mainBodyHtml = `
+      <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:20px;align-items:start;">
+        <!-- Card 1: Gửi Email (Nodemailer) -->
+        <div style="background:var(--admin-bg-surface);border:1px solid var(--admin-border);border-radius:14px;padding:24px;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+          <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--admin-border);padding-bottom:14px;margin-bottom:18px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:36px;height:36px;border-radius:8px;background:rgba(2,132,199,0.15);display:flex;align-items:center;justify-content:center;color:#38bdf8;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </div>
+              <div>
+                <h3 style="font-size:16px;font-weight:700;color:#ffffff;margin:0;">Dịch Vụ Gửi Email (Nodemailer)</h3>
+                <div style="font-size:12px;color:#94a3b8;">Gửi email thông báo, xác nhận đơn hàng hoặc chăm sóc khách hàng</div>
+              </div>
+            </div>
+            <span class="admin-badge pay-paid">Nodemailer Active</span>
+          </div>
+
+          <!-- Mẫu chọn nhanh -->
+          <div style="margin-bottom:16px;">
+            <div style="font-size:12px;color:#cbd5e1;margin-bottom:6px;font-weight:600;">Mẫu nội dung soạn nhanh:</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button type="button" class="web-admin-btn-action secondary" data-mail-tpl="order" style="font-size:11.5px;padding:4px 10px;">📄 Mẫu Hóa đơn đơn hàng</button>
+              <button type="button" class="web-admin-btn-action secondary" data-mail-tpl="promo" style="font-size:11.5px;padding:4px 10px;">🎁 Mẫu Khuyến mãi Gunpla</button>
+              <button type="button" class="web-admin-btn-action secondary" data-mail-tpl="welcome" style="font-size:11.5px;padding:4px 10px;">👋 Mẫu Chào mừng thành viên</button>
+            </div>
+          </div>
+
+          <form id="admin-send-mail-form" class="form-grid" style="gap:14px;">
+            <label style="grid-column:1 / -1;">Email người nhận
+              <input name="to" id="admin-mail-to" type="email" placeholder="khachhang@example.com" value="${esc(user?.email || 'cuckydangiu111@gmail.com')}" required>
+            </label>
+            <label style="grid-column:1 / -1;">Tiêu đề thư
+              <input name="subject" id="admin-mail-subject" placeholder="[3caidonhua] Thông báo đơn hàng" value="[3caidonhua Studio] Thông báo từ hệ thống quản trị" required>
+            </label>
+            <label style="grid-column:1 / -1;">Nội dung thư (Hỗ trợ HTML)
+              <textarea name="content" id="admin-mail-content" style="min-height:130px;font-family:var(--mono);font-size:12px;" required placeholder="Nhập nội dung thư cần gửi...">&lt;h2&gt;Xin chào quý khách,&lt;/h2&gt;&lt;p&gt;Cảm ơn bạn đã đồng hành cùng 3caidonhua Studio! Đơn hàng của bạn đang được xử lý.&lt;/p&gt;</textarea>
+            </label>
+            <div style="grid-column:1 / -1;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+              <span id="admin-mail-status" style="font-size:12px;color:#94a3b8;">Endpoint API: <code>POST /send-mail</code></span>
+              <button type="submit" class="web-admin-btn-action" style="background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;border:none;padding:10px 22px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                <span>Gửi Email Ngay</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Card 2: Upload File (Multer) & JWT Token Security -->
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <!-- Multer Manager -->
+          <div style="background:var(--admin-bg-surface);border:1px solid var(--admin-border);border-radius:14px;padding:24px;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+            <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--admin-border);padding-bottom:14px;margin-bottom:18px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:36px;height:36px;border-radius:8px;background:rgba(245,158,11,0.15);display:flex;align-items:center;justify-content:center;color:#fbbf24;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                </div>
+                <div>
+                  <h3 style="font-size:16px;font-weight:700;color:#ffffff;margin:0;">Tải Ảnh Lên Hệ Thống (Multer)</h3>
+                  <div style="font-size:12px;color:#94a3b8;">Upload trực tiếp vào thư mục lưu trữ /public/images/</div>
+                </div>
+              </div>
+              <span class="admin-badge pay-paid">Multer DiskStorage</span>
+            </div>
+
+            <div style="border:2px dashed rgba(255,255,255,0.15);border-radius:10px;padding:24px 16px;text-align:center;background:rgba(0,0,0,0.25);margin-bottom:14px;">
+              <label style="cursor:pointer;display:block;">
+                <input type="file" id="admin-standalone-file-input" accept="image/*" style="display:none;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.8" style="margin-bottom:8px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <div style="font-size:13.5px;font-weight:700;color:#ffffff;">Nhấn để chọn tệp ảnh tải lên (Multer)</div>
+                <div style="font-size:12px;color:#94a3b8;margin-top:4px;">Hỗ trợ .jpg, .png, .jpeg, .webp, .gif (Tối đa 5MB)</div>
+              </label>
+            </div>
+
+            <div id="admin-upload-result-box" style="display:none;background:rgba(18,24,38,0.95);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px;align-items:center;gap:12px;">
+              <img id="admin-upload-result-img" src="" style="width:50px;height:50px;border-radius:6px;object-fit:cover;border:1px solid rgba(255,255,255,0.1);">
+              <div style="flex:1;overflow:hidden;">
+                <div style="font-size:12px;color:#22c55e;font-weight:700;">✔ Upload thành công!</div>
+                <code id="admin-upload-result-path" style="font-size:11.5px;color:#38bdf8;font-family:var(--mono);word-break:break-all;"></code>
+              </div>
+            </div>
+          </div>
+
+          <!-- JWT Token & Bcrypt Security Inspector -->
+          <div style="background:var(--admin-bg-surface);border:1px solid var(--admin-border);border-radius:14px;padding:24px;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+            <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--admin-border);padding-bottom:14px;margin-bottom:14px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:36px;height:36px;border-radius:8px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;color:#34d399;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <div>
+                  <h3 style="font-size:16px;font-weight:700;color:#ffffff;margin:0;">Bảo Mật JWT Token &amp; Bcrypt</h3>
+                  <div style="font-size:12px;color:#94a3b8;">Xác thực Token Bearer &amp; Refresh Token chuẩn WEB503</div>
+                </div>
+              </div>
+              <span class="admin-badge user-active">Bcrypt + JWT</span>
+            </div>
+
+            <div style="font-size:12px;color:#94a3b8;line-height:1.5;margin-bottom:14px;">
+              Mật khẩu lưu trong MongoDB được băm bảo mật qua <strong>Bcrypt Salt</strong>. Request API gửi kèm Token Bearer qua header <code>Authorization</code>.
+            </div>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button type="button" class="web-admin-btn-action secondary" data-test-jwt-profile style="font-size:12px;padding:7px 14px;display:inline-flex;align-items:center;gap:6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Kiểm tra Token (GET /profile-jwt)
+              </button>
+              <button type="button" class="web-admin-btn-action secondary" data-refresh-jwt style="font-size:12px;padding:7px 14px;display:inline-flex;align-items:center;gap:6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                Làm mới Token (POST /refresh-token)
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   // -------------------------------------------------------------
@@ -2841,6 +2988,11 @@ function renderAdmin() {
             <span class="nav-text">QUẢN TRỊ TÀI KHOẢN</span>
             <span class="web-admin-badge-count">${usersCount}</span>
           </a>
+          <a class="web-admin-nav-item ${tab === 'system' ? 'active' : ''}" data-tab="system">
+            <svg class="admin-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span class="nav-text">EMAIL &amp; HỆ THỐNG</span>
+            <span class="web-admin-badge-count blue">WEB503</span>
+          </a>
         </aside>
 
         <main class="web-admin-main">
@@ -2911,8 +3063,19 @@ function editProduct(id) {
           <option value="archived" ${p?.status === 'archived' ? 'selected' : ''}>Lưu trữ / Hết vòng đời (Archived)</option>
         </select>
       </label>
-      <label>Hình ảnh sản phẩm (URL hoặc đường dẫn)
-        <input name="image" value="${esc(p?.image || '/assets/products/rg-hinu.jpg')}" maxlength="500">
+      <label style="grid-column: 1 / -1;">Hình ảnh sản phẩm (URL hoặc tải lên qua Multer)
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input name="image" id="prod-img-input" value="${esc(p?.image || '/assets/products/rg-hinu.jpg')}" maxlength="500" style="flex:1;">
+          <label class="button secondary" style="cursor:pointer;margin:0;white-space:nowrap;padding:8px 14px;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;">
+            <input type="file" id="prod-file-upload-input" accept="image/*" style="display:none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>Tải ảnh lên (Multer)</span>
+          </label>
+        </div>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:10px;">
+          <img id="prod-img-preview" src="${esc(p?.image || '/assets/products/rg-hinu.jpg')}" alt="Preview" style="height:56px;width:56px;border-radius:8px;object-fit:cover;border:1px solid rgba(255,255,255,0.15);background:#0f172a;">
+          <span id="prod-img-upload-status" style="font-size:12px;color:#94a3b8;">Chọn tệp ảnh từ máy tính để tải lên thư mục <code>/public/images/</code></span>
+        </div>
       </label>
       <label style="grid-column: 1 / -1;">Mô tả chi tiết sản phẩm
         <textarea name="description" maxlength="10000" style="min-height:90px;">${esc(p?.description)}</textarea>
@@ -2944,8 +3107,19 @@ function categoryForm(value) {
           <option value="inactive" ${c?.status === 'inactive' ? 'selected' : ''}>Tạm ẩn (Inactive)</option>
         </select>
       </label>
-      <label style="grid-column: 1 / -1;">Ảnh đại diện danh mục
-        <input name="image" value="${esc(c?.image || '/assets/products/rg-hinu.jpg')}" maxlength="500">
+      <label style="grid-column: 1 / -1;">Ảnh đại diện danh mục (URL hoặc tải lên qua Multer)
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input name="image" id="cat-img-input" value="${esc(c?.image || '/assets/products/rg-hinu.jpg')}" maxlength="500" style="flex:1;">
+          <label class="button secondary" style="cursor:pointer;margin:0;white-space:nowrap;padding:8px 14px;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;">
+            <input type="file" id="cat-file-upload-input" accept="image/*" style="display:none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>Tải ảnh lên (Multer)</span>
+          </label>
+        </div>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:10px;">
+          <img id="cat-img-preview" src="${esc(c?.image || '/assets/products/rg-hinu.jpg')}" alt="Preview" style="height:56px;width:56px;border-radius:8px;object-fit:cover;border:1px solid rgba(255,255,255,0.15);background:#0f172a;">
+          <span id="cat-img-upload-status" style="font-size:12px;color:#94a3b8;">Chọn tệp ảnh từ máy tính để tải lên thư mục <code>/public/images/</code></span>
+        </div>
       </label>
       <label style="grid-column: 1 / -1;">Mô tả danh mục
         <textarea name="description" maxlength="2000" style="min-height:80px;">${esc(c?.description)}</textarea>
@@ -3265,7 +3439,11 @@ function adminOrderDetail(id) {
         </div>
       </div>
 
-      <div style="display:flex;justify-content:flex-end;margin-top:20px;">
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+        <button type="button" class="web-admin-btn-action" data-send-order-email="${o.id || o._id}" style="background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;border:none;padding:9px 18px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span>Gửi Email Hóa Đơn (Nodemailer)</span>
+        </button>
         <button class="button secondary" data-close="true">Đóng chi tiết đơn</button>
       </div>
     </div>
@@ -3737,6 +3915,100 @@ async function handleClick(target) {
   if (target.id === 'admin-refresh-btn' || target.closest('#admin-refresh-btn')) {
     await loadAdmin();
     toast('Đã làm mới dữ liệu!');
+    return;
+  }
+
+  // Gửi Email Hóa Đơn đơn hàng qua Nodemailer
+  if (target.dataset.sendOrderEmail || target.closest('[data-send-order-email]')) {
+    const btn = target.dataset.sendOrderEmail ? target : target.closest('[data-send-order-email]');
+    const oId = btn.dataset.sendOrderEmail;
+    const o = orders.find(x => x.id == oId || x._id == oId);
+    if (!o) return;
+    const customerEmail = o.email || (user ? user.email : 'cuckydangiu111@gmail.com');
+    const recipient = prompt('Nhập địa chỉ email người nhận hóa đơn:', customerEmail);
+    if (!recipient) return;
+
+    toast('Đang gửi email qua Nodemailer...');
+    try {
+      const itemsListHtml = (o.items || []).map(i => `<li>${esc(i.name)} x ${i.quantity} = ${money(i.price * i.quantity)}</li>`).join('');
+      const emailContent = `
+        <div style="font-family:Arial,sans-serif;padding:24px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;max-width:600px;color:#1e293b;">
+          <h2 style="color:#e60012;margin-top:0;font-size:20px;border-bottom:2px solid #e60012;padding-bottom:10px;">3CAIDONHUA STUDIO - HÓA ĐƠN ĐƠN HÀNG</h2>
+          <p>Kính chào quý khách <strong>${esc(o.recipient || 'Quý khách')}</strong>,</p>
+          <p>Đơn hàng của bạn đã được ghi nhận trên hệ thống 3caidonhua.</p>
+          <div style="background:#ffffff;padding:16px;border-radius:8px;border:1px solid #cbd5e1;margin:16px 0;">
+            <p style="margin:4px 0;">Mã đơn: <strong style="color:#0284c7;font-size:16px;">#${esc(o.code)}</strong></p>
+            <p style="margin:4px 0;">Ngày đặt: <strong>${o.createdAt ? new Date(o.createdAt).toLocaleString('vi-VN') : ''}</strong></p>
+            <p style="margin:4px 0;">Phương thức thanh toán: <strong>${esc(o.paymentMethod || 'COD')}</strong></p>
+            <p style="margin:4px 0;">Địa chỉ giao hàng: <strong>${esc(o.address || '')}</strong></p>
+          </div>
+          <p style="font-weight:700;">Danh sách mô hình Gunpla:</p>
+          <ul style="line-height:1.8;padding-left:20px;">${itemsListHtml}</ul>
+          <p style="font-size:16px;margin-top:16px;"><strong>Tổng tiền thanh toán: <span style="color:#e60012;font-size:18px;">${money(o.total || 0)}</span></strong></p>
+          <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0;">
+          <p style="font-size:12px;color:#64748b;">3caidonhua Studio - Phân phối Gunpla Bandai Spirits chính hãng. Hotline hỗ trợ: 0907 652 267.</p>
+        </div>
+      `;
+      const res = await api('/send-mail', 'POST', {
+        to: recipient,
+        subject: `[3caidonhua] Hóa đơn xác nhận đơn hàng #${o.code}`,
+        content: emailContent
+      });
+      toast(res.message || 'Đã gửi email hóa đơn thành công qua Nodemailer!');
+    } catch (err) {
+      toast('Lỗi gửi email: ' + err.message);
+    }
+    return;
+  }
+
+  // Mẫu email soạn nhanh
+  if (target.dataset.mailTpl) {
+    const tpl = target.dataset.mailTpl;
+    const subEl = $('#admin-mail-subject');
+    const cntEl = $('#admin-mail-content');
+    if (tpl === 'order') {
+      if (subEl) subEl.value = '[3caidonhua Studio] Xác nhận đơn hàng Gunpla';
+      if (cntEl) cntEl.value = '<h2>Kính chào quý khách,</h2><p>Đơn hàng Gunpla của bạn đã được đóng gói cẩn thận bằng màng chống sốc và chuyển giao cho đơn vị vận chuyển.</p><p>Mã bưu gửi theo dõi: <strong>VN-GUNPLA-9921</strong></p><p>Trân trọng cảm ơn quý khách!</p>';
+    } else if (tpl === 'promo') {
+      if (subEl) subEl.value = '[3caidonhua Studio] Siêu Sale Gunpla Giảm Đến 20% Hôm Nay!';
+      if (cntEl) cntEl.value = '<h2>Ưu đãi đặc biệt từ 3caidonhua Studio!</h2><p>Nhập ngay mã <strong>GUNPLA10</strong> khi thanh toán để được giảm 10% toàn bộ mô hình MG, RG và phụ kiện kẹp cắt Bandai Spirits chính hãng.</p><p>Xem ngay tại: <a href="http://localhost:3000/#catalog">3caidonhua Store</a></p>';
+    } else if (tpl === 'welcome') {
+      if (subEl) subEl.value = '[3caidonhua Studio] Chào mừng thành viên mới gia nhập cộng đồng Gunpla!';
+      if (cntEl) cntEl.value = '<h2>Chào mừng bạn đến với 3caidonhua Studio!</h2><p>Tài khoản thành viên của bạn đã được kích hoạt thành công trên hệ thống bảo mật JWT của chúng tôi. Chúc bạn có những phút giây lắp ráp mô hình thật tuyệt vời!</p>';
+    }
+    toast('Đã áp dụng mẫu nội dung email!');
+    return;
+  }
+
+  // Test JWT Profile Token Verification (GET /profile-jwt)
+  if (target.dataset.testJwtProfile || target.closest('[data-test-jwt-profile]')) {
+    try {
+      const res = await api('/users/profile-jwt');
+      toast(res.message ? `${res.message} (Email: ${res.user?.email || 'N/A'})` : 'Xác thực JWT Bearer Token thành công!');
+    } catch (err) {
+      toast('Lỗi xác thực JWT: ' + err.message);
+    }
+    return;
+  }
+
+  // Refresh JWT Token (POST /refresh-token)
+  if (target.dataset.refreshJwt || target.closest('[data-refresh-jwt]')) {
+    try {
+      const rf = (typeof localStorage !== 'undefined') ? localStorage.getItem('refresh_token') : null;
+      if (!rf) {
+        toast('Chưa lưu refresh_token trong trình duyệt. Vui lòng đăng nhập lại để nhận token mới!');
+        return;
+      }
+      const res = await api('/users/refresh-token', 'POST', { refresh_token: rf });
+      if (res.access_token) {
+        localStorage.setItem('access_token', res.access_token);
+        if (res.refresh_token) localStorage.setItem('refresh_token', res.refresh_token);
+        toast('Đã làm mới JWT Access Token thành công!');
+        if (location.hash === '#account') await renderAccountPage('profile');
+      }
+    } catch (err) {
+      toast('Lỗi làm mới token: ' + err.message);
+    }
     return;
   }
 
@@ -4223,6 +4495,20 @@ async function submit(form) {
     toast('Đã cập nhật đơn hàng.');
     return;
   }
+
+  if (form.id === 'admin-send-mail-form') {
+    const statusEl = $('#admin-mail-status');
+    if (statusEl) statusEl.innerHTML = '<span style="color:#38bdf8;">⏳ Đang gửi email qua Nodemailer...</span>';
+    try {
+      const res = await api('/send-mail', 'POST', body);
+      if (statusEl) statusEl.innerHTML = `<span style="color:#22c55e;">✔ Gửi email thành công: ${esc(res.message || 'Đã gửi qua SMTP')}</span>`;
+      toast(res.message || 'Gửi email thành công qua Nodemailer!');
+    } catch (err) {
+      if (statusEl) statusEl.innerHTML = `<span style="color:#ef4444;">❌ Lỗi: ${esc(err.message)}</span>`;
+      toast('Lỗi gửi email: ' + err.message);
+    }
+    return;
+  }
 }
 
 /* ==========================================================================
@@ -4370,6 +4656,74 @@ document.addEventListener('change', e => {
   }
   if (e.target.id === 'admin-select-all') {
     document.querySelectorAll('.admin-row-chk').forEach(c => c.checked = e.target.checked);
+  }
+
+  // Multer upload ảnh sản phẩm (Product Form)
+  if (e.target.id === 'prod-file-upload-input') {
+    const file = e.target.files[0];
+    if (!file) return;
+    const statusEl = $('#prod-img-upload-status');
+    const inputEl = $('#prod-img-input');
+    const previewEl = $('#prod-img-preview');
+    if (statusEl) statusEl.innerHTML = '<span style="color:#38bdf8;">⏳ Đang tải ảnh lên qua Multer...</span>';
+    void run(async () => {
+      try {
+        const data = await uploadFile(file);
+        const imgPath = data.path || (data.files && data.files[0]) || '';
+        if (inputEl) inputEl.value = imgPath;
+        if (previewEl) previewEl.src = imgPath;
+        if (statusEl) statusEl.innerHTML = `<span style="color:#22c55e;">✔ Tải lên thành công: <code>${imgPath}</code></span>`;
+        toast('Đã tải ảnh lên thành công qua Multer!');
+      } catch (err) {
+        if (statusEl) statusEl.innerHTML = `<span style="color:#ef4444;">❌ Lỗi: ${esc(err.message)}</span>`;
+        toast('Lỗi upload ảnh: ' + err.message);
+      }
+    });
+  }
+
+  // Multer upload ảnh danh mục (Category Form)
+  if (e.target.id === 'cat-file-upload-input') {
+    const file = e.target.files[0];
+    if (!file) return;
+    const statusEl = $('#cat-img-upload-status');
+    const inputEl = $('#cat-img-input');
+    const previewEl = $('#cat-img-preview');
+    if (statusEl) statusEl.innerHTML = '<span style="color:#38bdf8;">⏳ Đang tải ảnh lên qua Multer...</span>';
+    void run(async () => {
+      try {
+        const data = await uploadFile(file);
+        const imgPath = data.path || (data.files && data.files[0]) || '';
+        if (inputEl) inputEl.value = imgPath;
+        if (previewEl) previewEl.src = imgPath;
+        if (statusEl) statusEl.innerHTML = `<span style="color:#22c55e;">✔ Tải lên thành công: <code>${imgPath}</code></span>`;
+        toast('Đã tải ảnh lên thành công qua Multer!');
+      } catch (err) {
+        if (statusEl) statusEl.innerHTML = `<span style="color:#ef4444;">❌ Lỗi: ${esc(err.message)}</span>`;
+        toast('Lỗi upload ảnh: ' + err.message);
+      }
+    });
+  }
+
+  // Multer upload ảnh độc lập (Admin System Tab)
+  if (e.target.id === 'admin-standalone-file-input') {
+    const file = e.target.files[0];
+    if (!file) return;
+    const box = $('#admin-upload-result-box');
+    const img = $('#admin-upload-result-img');
+    const pathEl = $('#admin-upload-result-path');
+    toast('Đang tải ảnh lên qua Multer...');
+    void run(async () => {
+      try {
+        const data = await uploadFile(file);
+        const imgPath = data.path || (data.files && data.files[0]) || '';
+        if (box) box.style.display = 'flex';
+        if (img) img.src = imgPath;
+        if (pathEl) pathEl.innerText = imgPath;
+        toast('Đã tải tệp ảnh lên /public/images/ thành công!');
+      } catch (err) {
+        toast('Lỗi upload ảnh: ' + err.message);
+      }
+    });
   }
 });
 
