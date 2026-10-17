@@ -16,6 +16,8 @@ var adminRouter = require('./routes/admin');
 var metadataRouter = require('./routes/metadata');
 var { router: cartRouter } = require('./routes/cart');
 var paymentRouter = require('./routes/payment');
+var uploadRouter = require('./routes/upload');
+var mailRouter = require('./routes/mail');
 
 var app = express();
 
@@ -64,6 +66,10 @@ app.use('/cart', cartRouter);
 app.use('/api/cart', cartRouter);
 app.use('/payment', paymentRouter);
 app.use('/api/payment', paymentRouter);
+app.use('/', uploadRouter);
+app.use('/api', uploadRouter);
+app.use('/', mailRouter);
+app.use('/api', mailRouter);
 
 // Catch 404 and forward to error handler
 app.use(function(req, res, next) {

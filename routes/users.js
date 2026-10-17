@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var UserController = require('../controllers/UserController');
+var authen = require('../middleware/authen');
 
 /**
  * Routes Quản lý Người dùng & Xác thực (Users & Auth)
@@ -15,9 +16,15 @@ router.get('/me', UserController.getMe);
 router.put('/me', UserController.updateMe);
 router.patch('/me', UserController.updateMe);
 
-// 3. Đăng ký, Đăng nhập, Đăng xuất
+// Route kiểm tra xác thực JWT bằng Header Authorization (Bearer Token) theo chuẩn bài giảng
+router.get('/profile-jwt', authen, (req, res) => {
+    res.status(200).json({ status: 1, message: 'Xác thực JWT thành công!', user: req.user });
+});
+
+// 3. Đăng ký, Đăng nhập, Đăng xuất, Refresh Token
 router.post('/register', UserController.create);
 router.post('/login', UserController.login);
+router.post('/refresh-token', UserController.refreshToken);
 router.post('/logout', UserController.logout);
 
 // 4. Chi tiết người dùng theo ID (GET /users/:id)

@@ -1,9 +1,20 @@
 const userModel = require('../models/user');
 const billModel = require('../models/bill');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
-// Helper lấy ID người dùng đang đăng nhập từ Cookie hoặc Header
+// Helper lấy ID người dùng đang đăng nhập từ Cookie, Header x-user-id hoặc Bearer Token JWT
 function getAuthUserId(req) {
-    return req.cookies?.userId || req.headers['x-user-id'] || null;
+    if (req.cookies?.userId) return req.cookies.userId;
+    if (req.headers['x-user-id']) return req.headers['x-user-id'];
+    if (req.headers.authorization) {
+        try {
+            const token = req.headers.authorization.split(' ')[1];
+            const data = jwt.verify(token, process.env.JWT_SECRET || 'shhhhh');
+            if (data && data.user) return data.user._id || data.user.id;
+        } catch (_) {}
+    }
+    return null;
 }
 
 const UserController = {
@@ -129,39 +140,53 @@ const UserController = {
         }
     },
 
-    // 5. Đăng ký tài khoản mới (Tạo người dùng)
+    // 5. Đăng ký tài khoản mới (Tạo người dùng với Bcrypt Hash)
     create: async (req, res) => {
         try {
-            const { name, email, password, phone, address, role } = req.body;
+            const { name, email, password, confirm_password, phone, address, role } = req.body;
             if (!email || !password) {
                 return res.status(400).json({ status: 0, message: 'Vui lòng điền đầy đủ email và mật khẩu.' });
+            }
+            if (confirm_password && password !== confirm_password) {
+                return res.status(400).json({ status: 0, message: 'Mật khẩu xác nhận không khớp.' });
             }
             const existing = await userModel.findOne({ email: email.trim().toLowerCase() });
             if (existing) {
                 return res.status(400).json({ status: 0, message: 'Email này đã được sử dụng. Vui lòng đăng nhập hoặc dùng email khác.' });
             }
+
+            // Mã hóa mật khẩu bằng bcrypt theo đúng chuẩn bài giảng Google Doc
+            const salt = bcrypt.genSaltSync(10);
+            const hashedPassword = bcrypt.hashSync(password, salt);
+
             const newUser = await userModel.create({
                 name: name || 'Thành viên Gunpla',
                 email: email.trim().toLowerCase(),
-                password,
+                password: hashedPassword,
                 phone: phone || '',
                 address: address || '',
                 role: role || 'user',
                 status: 'active'
             });
+
             return res.status(201).json({
                 status: 1,
                 message: 'Đăng ký tài khoản thành công! Vui lòng đăng nhập.',
                 id: newUser._id.toString(),
                 email: newUser.email,
-                name: newUser.name
+                name: newUser.name,
+                user: {
+                    _id: newUser._id.toString(),
+                    email: newUser.email,
+                    name: newUser.name
+                }
             });
         } catch (err) {
-            return res.status(500).json({ message: err.message });
+            return res.status(500).json({ status: 0, message: err.message });
         }
     },
 
-    // 6. Đăng nhập hệ thống
+    // 6. Đăng nhập hệ thống (Bcrypt Compare + Cấp JWT Access Token & Refresh Token)
     login: async (req, res) => {
         try {
             const { email, password } = req.body;
@@ -169,14 +194,35 @@ const UserController = {
                 return res.status(400).json({ status: 0, message: 'Vui lòng nhập email và mật khẩu' });
             }
 
-            const user = await userModel.findOne({ email: email.trim().toLowerCase(), password });
+            const user = await userModel.findOne({ email: email.trim().toLowerCase() });
             if (!user) {
+                return res.status(401).json({ status: 0, message: 'Email hoặc mật khẩu không chính xác' });
+            }
+
+            // Kiểm tra mật khẩu (hỗ trợ cả mật khẩu đã băm bcrypt và mật khẩu cũ)
+            const isPasswordMatch = (user.password && user.password.startsWith('$2') && bcrypt.compareSync(password, user.password)) || (user.password === password);
+            if (!isPasswordMatch) {
                 return res.status(401).json({ status: 0, message: 'Email hoặc mật khẩu không chính xác' });
             }
 
             if (user.status === 'locked') {
                 return res.status(403).json({ status: 0, message: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.' });
             }
+
+            const safeUser = {
+                _id: user._id.toString(),
+                id: user._id.toString(),
+                name: user.name,
+                email: user.email,
+                role: user.role || 'user',
+                status: user.status || 'active',
+                phone: user.phone || '',
+                address: user.address || ''
+            };
+
+            // Tạo access_token và refresh_token theo đúng chuẩn bài giảng Google Doc
+            const access_token = jwt.sign({ user: safeUser }, process.env.JWT_SECRET || 'shhhhh', { expiresIn: 60 * 60 });
+            const refresh_token = jwt.sign({ user: safeUser }, process.env.JWT_SECRET || 'shhhhh', { expiresIn: 90 * 24 * 60 * 60 });
 
             res.cookie('userId', user._id.toString(), { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 });
             return res.status(200).json({
@@ -190,19 +236,28 @@ const UserController = {
                 status: user.status || 'active',
                 phone: user.phone,
                 address: user.address,
-                user: {
-                    _id: user._id.toString(),
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                    status: user.status,
-                    phone: user.phone,
-                    address: user.address,
-                    createdAt: user.createdAt
-                }
+                access_token,
+                refresh_token,
+                user: safeUser
             });
         } catch (err) {
             return res.status(500).json({ status: 0, message: err.message });
+        }
+    },
+
+    // Cấp lại access_token bằng refresh_token theo đúng chuẩn Google Doc
+    refreshToken: async (req, res) => {
+        try {
+            const { refresh_token } = req.body;
+            if (!refresh_token) {
+                return res.status(400).json({ status: 0, error: 'Chưa cung cấp refresh_token' });
+            }
+            const data = jwt.verify(refresh_token, process.env.JWT_SECRET || 'shhhhh');
+            const access_token = jwt.sign({ user: data.user }, process.env.JWT_SECRET || 'shhhhh', { expiresIn: 60 * 60 });
+            const new_refresh_token = jwt.sign({ user: data.user }, process.env.JWT_SECRET || 'shhhhh', { expiresIn: 90 * 24 * 60 * 60 });
+            return res.status(200).json({ status: 1, user: data.user, access_token, refresh_token: new_refresh_token });
+        } catch (error) {
+            return res.status(401).json({ status: 0, error: error.message });
         }
     },
 
