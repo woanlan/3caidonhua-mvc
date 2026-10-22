@@ -1,44 +1,62 @@
 import { api, user, setUser, ApiError, uploadFile } from './api.js';
 
 const DEFAULT_PRODUCTS = [
-  { id: 'p1', name: 'SD Gundam RX-78-2 EX-Standard', slug: 'sd-rx78-2', description: 'Mô hình SD Gundam thiết kế dễ thương, dễ lắp ráp, phù hợp cho người mới bắt đầu.', categoryId: 1, brandId: 1, gradeId: 1, seriesId: 1, scale: 'Non-scale', status: 'active', grade: 'SD', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p1', sku: 'SD-RX78', price: 160000, stock: 25, reserved: 0, image: '/assets/products/sd-rx78.jpg' },
-  { id: 'p2', name: 'SD Gundam Barbatos Lupus Rex', slug: 'sd-barbatos', description: 'Mô hình SD Gundam Barbatos Lupus Rex dạng chibi sắc nét kèm vũ khí mace siêu to.', categoryId: 1, brandId: 1, gradeId: 1, seriesId: 3, scale: 'Non-scale', status: 'active', grade: 'SD', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Post Disaster (IBO)', variantId: 'p2', sku: 'SD-BARBATOS', price: 190000, stock: 18, reserved: 0, image: '/assets/products/sd-barbatos.jpg' },
-  { id: 'p3', name: 'HG 1/144 Gundam Aerial', slug: 'hg-aerial', description: 'Bộ kit Gundam Aerial từ anime The Witch from Mercury với hiệu ứng Bit On Form ấn tượng.', categoryId: 1, brandId: 1, gradeId: 2, seriesId: 4, scale: '1/144', status: 'active', grade: 'HG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Witch from Mercury', variantId: 'p3', sku: 'HG-AERIAL', price: 380000, stock: 30, reserved: 0, image: '/assets/products/hg-aerial.jpg' },
-  { id: 'p4', name: 'HG 1/144 Moon Gundam', slug: 'hg-moon', description: 'Bộ kit HG chi tiết bậc nhất vũ trụ UC, khớp nối hiện đại và mảng psycho plate hoành tráng.', categoryId: 1, brandId: 1, gradeId: 2, seriesId: 1, scale: '1/144', status: 'active', grade: 'HG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p4', sku: 'HG-MOON', price: 650000, stock: 12, reserved: 0, image: '/assets/products/hg-moon.jpg' },
-  { id: 'p5', name: 'HG 1/144 Gundam Aerial Rebuild', slug: 'hg-aerial-rebuild', description: 'Phiên bản nâng cấp uy lực của Aerial với khẩu pháo GUND-Bit Cannon khổng lồ.', categoryId: 1, brandId: 1, gradeId: 2, seriesId: 4, scale: '1/144', status: 'active', grade: 'HG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Witch from Mercury', variantId: 'p5', sku: 'HG-REBUILD', price: 490000, stock: 22, reserved: 0, image: '/assets/products/hg-aerial-rebuild.jpg' },
-  { id: 'p6', name: 'RG 1/144 Hi-Nu Gundam', slug: 'rg-hi-nu', description: 'Tuyệt tác Real Grade với độ tinh xảo đỉnh cao, fin funnel linh hoạt và biên độ cử động hoàn hảo.', categoryId: 1, brandId: 1, gradeId: 3, seriesId: 1, scale: '1/144', status: 'active', grade: 'RG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p6', sku: 'RG-HINU', price: 1150000, stock: 25, reserved: 0, image: '/assets/products/rg-hinu.jpg' },
-  { id: 'p7', name: 'RG 1/144 Sazabi Special', slug: 'rg-sazabi', description: 'Mô hình RG Sazabi to lớn uy nghi với khung xương thép đúc và nhiều cơ chế bung giáp độc đáo.', categoryId: 1, brandId: 1, gradeId: 3, seriesId: 1, scale: '1/144', status: 'active', grade: 'RG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p7', sku: 'RG-SAZABI', price: 1250000, stock: 15, reserved: 0, image: '/assets/products/rg-sazabi.jpg' },
-  { id: 'p8', name: 'IBO 1/100 Full Mechanics Barbatos Lupus', slug: 'ibo-barbatos', description: 'Tỷ lệ 1/100 Full Mechanics với khung xương đúc chuẩn xác, trang bị kiếm katana và vuốt tay dũng mãnh.', categoryId: 1, brandId: 1, gradeId: 4, seriesId: 3, scale: '1/100', status: 'active', grade: 'IBO', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Post Disaster (IBO)', variantId: 'p8', sku: 'IBO-BARBATOS', price: 850000, stock: 16, reserved: 0, image: '/assets/products/ibo-barbatos.jpg' },
-  { id: 'p9', name: 'RE 1/100 Gundam Nightingale', slug: 're-nightingale', description: 'Mẫu RE 1/100 Nightingale khổng lồ bệ vệ của Char Aznable với sải cánh và bình đẩy ngoại cỡ.', categoryId: 1, brandId: 1, gradeId: 5, seriesId: 1, scale: '1/100', status: 'active', grade: 'RE', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p9', sku: 'RE-NIGHTINGALE', price: 1650000, stock: 10, reserved: 0, image: '/assets/products/re-nightingale.jpg' },
-  { id: 'p10', name: 'MG 1/100 Freedom Gundam Ver 2.0', slug: 'mg-freedom-2', description: 'Mô hình Master Grade Freedom 2.0 với hệ cánh mở rộng lộng lẫy và chi tiết cơ khí sắc nét.', categoryId: 1, brandId: 1, gradeId: 6, seriesId: 2, scale: '1/100', status: 'active', grade: 'MG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Cosmic Era (SEED)', variantId: 'p10', sku: 'MG-FREEDOM2', price: 1290000, stock: 14, reserved: 0, image: '/assets/products/mg-freedom2.jpg' },
-  { id: 'p11', name: 'MG 1/100 Gundam Barbatos', slug: 'mg-barbatos', description: 'Khung xương Gundam Frame hoàn chỉnh bằng kim loại giả lập, xi lanh thủy lực chuyển động thật.', categoryId: 1, brandId: 1, gradeId: 6, seriesId: 3, scale: '1/100', status: 'active', grade: 'MG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Post Disaster (IBO)', variantId: 'p11', sku: 'MG-BARBATOS', price: 1100000, stock: 30, reserved: 0, image: '/assets/products/mg-barbatos.jpg' },
-  { id: 'p12', name: 'MG 1/100 Wing Gundam Zero EW Ver.Ka', slug: 'mg-wing-zero', description: 'Biểu tượng kinh điển của cái đẹp cơ khí với đôi cánh thiên thần huyền thoại.', categoryId: 1, brandId: 1, gradeId: 6, seriesId: 1, scale: '1/100', status: 'active', grade: 'MG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'After Colony (Wing)', variantId: 'p12', sku: 'MG-WING-ZERO', price: 1850000, stock: 12, reserved: 0, image: '/assets/products/mg-wing-zero.jpg' },
-  { id: 'p13', name: 'MG 1/100 Nu Gundam Ver.Ka', slug: 'mg-nu-vk', description: 'Cỗ máy bất hủ của phi công huyền thoại Amuro Ray với Fin Funnel và khung Psycho-Frame.', categoryId: 1, brandId: 1, gradeId: 6, seriesId: 1, scale: '1/100', status: 'active', grade: 'MG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p13', sku: 'MG-NU-VK', price: 2150000, stock: 15, reserved: 0, image: '/assets/products/mg-nu-vk.jpg' },
-  { id: 'p14', name: 'MGEX 1/100 Strike Freedom Gundam', slug: 'mgex-strike-freedom', description: 'Đỉnh cao Master Grade Extreme với khung xương mạ vàng 3 lớp kim loại cao cấp nhất lịch sử Gunpla.', categoryId: 1, brandId: 1, gradeId: 7, seriesId: 2, scale: '1/100', status: 'active', grade: 'MGEX', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Cosmic Era (SEED)', variantId: 'p14', sku: 'MGEX-SF', price: 3450000, stock: 8, reserved: 0, image: '/assets/products/mgex-strike-freedom.jpg' },
-  { id: 'p15', name: 'MG 1/100 Sazabi Ver.Ka', slug: 'mg-sazabi-verka', description: 'Thiết kế đỉnh cao của Katoki Hajime với giáp mở đa tầng, khung sườn bạc và decal nước độc quyền.', categoryId: 1, brandId: 1, gradeId: 6, seriesId: 1, scale: '1/100', status: 'active', grade: 'MG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p15', sku: 'MG-SAZABI-VK', price: 2300000, stock: 12, reserved: 0, image: '/assets/products/mg-sazabi-vk.jpg' },
-  { id: 'p16', name: 'PG 1/60 Unleashed RX-78-2 Gundam', slug: 'pg-unleashed-rx78', description: 'Tuyệt phẩm kỷ niệm 40 năm Gunpla với cấu trúc 5 giai đoạn lắp ráp, đèn LED đa màu.', categoryId: 1, brandId: 1, gradeId: 8, seriesId: 1, scale: '1/60', status: 'active', grade: 'PG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p16', sku: 'PG-UNLEASHED', price: 6200000, stock: 6, reserved: 0, image: '/assets/products/pg-unleashed.jpg' },
-  { id: 'p17', name: 'Mega Size 1/48 RX-78-2 Gundam', slug: 'mega-size-rx78', description: 'Kích thước khổng lồ cao tới 37.5cm, các mảnh ghép to bản dễ lắp và siêu ấn tượng khi trưng bày.', categoryId: 1, brandId: 1, gradeId: 9, seriesId: 1, scale: '1/48', status: 'active', grade: 'Mega Size', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p17', sku: 'MEGA-RX78', price: 2150000, stock: 7, reserved: 0, image: '/assets/products/mega-rx78.jpg' },
-  { id: 'p18', name: 'Gundam Daban 8802 Strike Freedom', slug: 'daban-strike-freedom', description: 'Mô hình Gundam Daban 8802 chi tiết sắc bén phong cách Metal Build cho người chơi chuyên sâu.', categoryId: 1, brandId: 2, gradeId: 6, seriesId: 2, scale: '1/100', status: 'active', grade: 'MG', category: 'Mô hình Gundam', brand: 'Daban', series: 'Cosmic Era (SEED)', variantId: 'p18', sku: 'DABAN-8802', price: 720000, stock: 20, reserved: 0, image: '/assets/products/daban-8802.jpg' },
-  { id: 'p19', name: 'Gundam Jijia Wing Zero Custom', slug: 'jijia-wing-zero', description: 'Bộ kit ráp mẫu Wing Zero Custom từ hãng Jijia với hiệu ứng lông vũ bung cánh lộng lẫy.', categoryId: 1, brandId: 3, gradeId: 6, seriesId: 1, scale: '1/100', status: 'active', grade: 'MG', category: 'Mô hình Gundam', brand: 'Jijia', series: 'After Colony (Wing)', variantId: 'p19', sku: 'JIJIA-WING', price: 680000, stock: 15, reserved: 0, image: '/assets/products/jijia-wing.jpg' },
-  { id: 'p20', name: 'Bút kẻ lằn chìm Gundam Marker GM01 Đen', slug: 'gundam-marker-gm01', description: 'Bút ngòi kim 0.05mm chuyên dụng kẻ lằn chi tiết rãnh giáp mô hình Gundam. Mực gốc dầu cao cấp.', categoryId: 2, brandId: 1, gradeId: null, seriesId: 6, scale: 'Non-scale', status: 'active', grade: '', category: 'Bút kẻ & Dụng cụ', brand: 'Bandai Spirits', series: 'Hobby Tools', variantId: 'p20', sku: 'TOOL-GM01', price: 65000, stock: 100, reserved: 0, image: '/assets/products/tool-gm01.jpg' },
-  { id: 'p21', name: 'Bộ bút tô Gundam Metallic Marker GMS121', slug: 'metallic-marker-gms121', description: 'Set 6 cây bút tô ánh kim loại (Vàng, Bạc, Đồng, Xanh, Đỏ kim loại) tạo điểm nhấn cơ khí.', categoryId: 2, brandId: 1, gradeId: null, seriesId: 6, scale: 'Non-scale', status: 'active', grade: '', category: 'Bút kẻ & Dụng cụ', brand: 'Bandai Spirits', series: 'Hobby Tools', variantId: 'p21', sku: 'TOOL-GMS121', price: 320000, stock: 45, reserved: 0, image: '/assets/products/tool-gms121.jpg' },
-  { id: 'p22', name: 'Kìm cắt mô hình Bandai Entry Nipper', slug: 'bandai-nipper', description: 'Kìm cắt lưỡi thép chuyên dụng cắt runner mô hình chính hãng Bandai Spirits, vết cắt phẳng mịn.', categoryId: 2, brandId: 1, gradeId: null, seriesId: 6, scale: 'Non-scale', status: 'active', grade: '', category: 'Bút kẻ & Dụng cụ', brand: 'Bandai Spirits', series: 'Hobby Tools', variantId: 'p22', sku: 'TOOL-NIPPER', price: 195000, stock: 50, reserved: 0, image: '/assets/products/tool-nipper.jpg' },
-  { id: 'p23', name: 'Cọ vẽ & dụng cụ chuyên dụng Bandai Tool Set', slug: 'bandai-tool-set', description: 'Bộ cọ tỉa chi tiết, nhíp gắp decal và dao gọt bavia chuyên dụng cho mô hình Gunpla.', categoryId: 2, brandId: 1, gradeId: null, seriesId: 6, scale: 'Non-scale', status: 'active', grade: '', category: 'Bút kẻ & Dụng cụ', brand: 'Bandai Spirits', series: 'Hobby Tools', variantId: 'p23', sku: 'TOOL-BRUSH-SET', price: 260000, stock: 35, reserved: 0, image: '/assets/products/tool-brush-set.jpg' },
-  { id: 'p24', name: 'Mô hình Tàu Thousand Sunny Grand Ship', slug: 'onepiece-thousand-sunny', description: 'Mô hình thuyền hải tặc Thousand Sunny của băng Mũ Rơm từ Bandai Spirits, kèm đế sóng biển.', categoryId: 3, brandId: 1, gradeId: null, seriesId: 5, scale: 'Non-scale', status: 'active', grade: '', category: 'Mô hình One Piece', brand: 'Bandai Spirits', series: 'One Piece Grand Ship', variantId: 'p24', sku: 'OP-SUNNY', price: 480000, stock: 20, reserved: 0, image: '/assets/products/op-sunny.jpg' },
-  { id: 'p25', name: 'Mô hình Tàu Going Merry Memorial Color', slug: 'onepiece-going-merry', description: 'Mô hình thuyền Going Merry kỷ niệm màu đặc biệt, kèm đầy đủ cờ hải tặc và mỏ neo.', categoryId: 3, brandId: 1, gradeId: null, seriesId: 5, scale: 'Non-scale', status: 'active', grade: '', category: 'Mô hình One Piece', brand: 'Bandai Spirits', series: 'One Piece Grand Ship', variantId: 'p25', sku: 'OP-MERRY', price: 490000, stock: 15, reserved: 0, image: '/assets/products/op-merry.jpg' },
-  { id: 'p26', name: 'One Piece Grand Ship Collection Red Force', slug: 'onepiece-red-force', description: 'Chiến thuyền Red Force oai vệ của Tứ Hoàng Shanks Tóc Đỏ thuộc dòng Grand Ship Collection.', categoryId: 3, brandId: 1, gradeId: null, seriesId: 5, scale: 'Non-scale', status: 'active', grade: '', category: 'Mô hình One Piece', brand: 'Bandai Spirits', series: 'One Piece Grand Ship', variantId: 'p26', sku: 'OP-RED-FORCE', price: 520000, stock: 18, reserved: 0, image: '/assets/products/op-red-force.jpg' }
+    { id: 'p1', name: 'SD Gundam RX-78-2 EX-Standard', slug: 'sd-rx78-2', description: 'Mô hình SD Gundam thiết kế dễ thương, dễ lắp ráp, phù hợp cho người mới bắt đầu.', categoryId: 1, brandId: 1, gradeId: 1, seriesId: 1, scale: 'Non-scale', status: 'active', grade: 'SD', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p1', sku: 'SD-RX78', price: 160000, stock: 25, reserved: 0, image: '/assets/products/sd-rx78.jpg' },
+    { id: 'p2', name: 'SD Gundam Barbatos Lupus Rex', slug: 'sd-barbatos', description: 'Mô hình SD Gundam Barbatos Lupus Rex dạng chibi sắc nét kèm vũ khí mace siêu to.', categoryId: 1, brandId: 1, gradeId: 1, seriesId: 3, scale: 'Non-scale', status: 'active', grade: 'SD', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Post Disaster (IBO)', variantId: 'p2', sku: 'SD-BARBATOS', price: 190000, stock: 18, reserved: 0, image: '/assets/products/sd-barbatos.jpg' },
+    { id: 'p3', name: 'HG 1/144 Gundam Aerial', slug: 'hg-aerial', description: 'Bộ kit Gundam Aerial từ anime The Witch from Mercury với hiệu ứng Bit On Form ấn tượng.', categoryId: 1, brandId: 1, gradeId: 2, seriesId: 4, scale: '1/144', status: 'active', grade: 'HG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Witch from Mercury', variantId: 'p3', sku: 'HG-AERIAL', price: 380000, stock: 30, reserved: 0, image: '/assets/products/hg-aerial.jpg' },
+    { id: 'p4', name: 'HG 1/144 Moon Gundam', slug: 'hg-moon', description: 'Bộ kit HG chi tiết bậc nhất vũ trụ UC, khớp nối hiện đại và mảng psycho plate hoành tráng.', categoryId: 1, brandId: 1, gradeId: 2, seriesId: 1, scale: '1/144', status: 'active', grade: 'HG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p4', sku: 'HG-MOON', price: 650000, stock: 12, reserved: 0, image: '/assets/products/hg-moon.jpg' },
+    { id: 'p5', name: 'HG 1/144 Gundam Aerial Rebuild', slug: 'hg-aerial-rebuild', description: 'Phiên bản nâng cấp uy lực của Aerial với khẩu pháo GUND-Bit Cannon khổng lồ.', categoryId: 1, brandId: 1, gradeId: 2, seriesId: 4, scale: '1/144', status: 'active', grade: 'HG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Witch from Mercury', variantId: 'p5', sku: 'HG-REBUILD', price: 490000, stock: 22, reserved: 0, image: '/assets/products/hg-aerial-rebuild.jpg' },
+    { id: 'p6', name: 'RG 1/144 Hi-Nu Gundam', slug: 'rg-hi-nu', description: 'Tuyệt tác Real Grade với độ tinh xảo đỉnh cao, fin funnel linh hoạt và biên độ cử động hoàn hảo.', categoryId: 1, brandId: 1, gradeId: 3, seriesId: 1, scale: '1/144', status: 'active', grade: 'RG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p6', sku: 'RG-HINU', price: 1150000, stock: 25, reserved: 0, image: '/assets/products/rg-hinu.jpg' },
+    { id: 'p7', name: 'RG 1/144 Sazabi Special', slug: 'rg-sazabi', description: 'Mô hình RG Sazabi to lớn uy nghi với khung xương thép đúc và nhiều cơ chế bung giáp độc đáo.', categoryId: 1, brandId: 1, gradeId: 3, seriesId: 1, scale: '1/144', status: 'active', grade: 'RG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p7', sku: 'RG-SAZABI', price: 1250000, stock: 15, reserved: 0, image: '/assets/products/rg-sazabi.jpg' },
+    { id: 'p8', name: 'IBO 1/100 Full Mechanics Barbatos Lupus', slug: 'ibo-barbatos', description: 'Tỷ lệ 1/100 Full Mechanics với khung xương đúc chuẩn xác, trang bị kiếm katana và vuốt tay dũng mãnh.', categoryId: 1, brandId: 1, gradeId: 4, seriesId: 3, scale: '1/100', status: 'active', grade: 'IBO', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Post Disaster (IBO)', variantId: 'p8', sku: 'IBO-BARBATOS', price: 850000, stock: 16, reserved: 0, image: '/assets/products/ibo-barbatos.jpg' },
+    { id: 'p9', name: 'RE 1/100 Gundam Nightingale', slug: 're-nightingale', description: 'Mẫu RE 1/100 Nightingale khổng lồ bệ vệ của Char Aznable với sải cánh và bình đẩy ngoại cỡ.', categoryId: 1, brandId: 1, gradeId: 5, seriesId: 1, scale: '1/100', status: 'active', grade: 'RE', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p9', sku: 'RE-NIGHTINGALE', price: 1650000, stock: 10, reserved: 0, image: '/assets/products/re-nightingale.jpg' },
+    { id: 'p10', name: 'MG 1/100 Freedom Gundam Ver 2.0', slug: 'mg-freedom-2', description: 'Mô hình Master Grade Freedom 2.0 với hệ cánh mở rộng lộng lẫy và chi tiết cơ khí sắc nét.', categoryId: 1, brandId: 1, gradeId: 6, seriesId: 2, scale: '1/100', status: 'active', grade: 'MG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Cosmic Era (SEED)', variantId: 'p10', sku: 'MG-FREEDOM2', price: 1290000, stock: 14, reserved: 0, image: '/assets/products/mg-freedom2.jpg' },
+    { id: 'p11', name: 'MG 1/100 Gundam Barbatos', slug: 'mg-barbatos', description: 'Khung xương Gundam Frame hoàn chỉnh bằng kim loại giả lập, xi lanh thủy lực chuyển động thật.', categoryId: 1, brandId: 1, gradeId: 6, seriesId: 3, scale: '1/100', status: 'active', grade: 'MG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Post Disaster (IBO)', variantId: 'p11', sku: 'MG-BARBATOS', price: 1100000, stock: 30, reserved: 0, image: '/assets/products/mg-barbatos.jpg' },
+    { id: 'p12', name: 'MG 1/100 Wing Gundam Zero EW Ver.Ka', slug: 'mg-wing-zero', description: 'Biểu tượng kinh điển của cái đẹp cơ khí với đôi cánh thiên thần huyền thoại.', categoryId: 1, brandId: 1, gradeId: 6, seriesId: 1, scale: '1/100', status: 'active', grade: 'MG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'After Colony (Wing)', variantId: 'p12', sku: 'MG-WING-ZERO', price: 1850000, stock: 12, reserved: 0, image: '/assets/products/mg-wing-zero.jpg' },
+    { id: 'p13', name: 'MG 1/100 Nu Gundam Ver.Ka', slug: 'mg-nu-vk', description: 'Cỗ máy bất hủ của phi công huyền thoại Amuro Ray với Fin Funnel và khung Psycho-Frame.', categoryId: 1, brandId: 1, gradeId: 6, seriesId: 1, scale: '1/100', status: 'active', grade: 'MG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p13', sku: 'MG-NU-VK', price: 2150000, stock: 15, reserved: 0, image: '/assets/products/mg-nu-vk.jpg' },
+    { id: 'p14', name: 'MGEX 1/100 Strike Freedom Gundam', slug: 'mgex-strike-freedom', description: 'Đỉnh cao Master Grade Extreme với khung xương mạ vàng 3 lớp kim loại cao cấp nhất lịch sử Gunpla.', categoryId: 1, brandId: 1, gradeId: 7, seriesId: 2, scale: '1/100', status: 'active', grade: 'MGEX', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Cosmic Era (SEED)', variantId: 'p14', sku: 'MGEX-SF', price: 3450000, stock: 8, reserved: 0, image: '/assets/products/mgex-strike-freedom.jpg' },
+    { id: 'p15', name: 'MG 1/100 Sazabi Ver.Ka', slug: 'mg-sazabi-verka', description: 'Thiết kế đỉnh cao của Katoki Hajime với giáp mở đa tầng, khung sườn bạc và decal nước độc quyền.', categoryId: 1, brandId: 1, gradeId: 6, seriesId: 1, scale: '1/100', status: 'active', grade: 'MG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p15', sku: 'MG-SAZABI-VK', price: 2300000, stock: 12, reserved: 0, image: '/assets/products/mg-sazabi-vk.jpg' },
+    { id: 'p16', name: 'PG 1/60 Unleashed RX-78-2 Gundam', slug: 'pg-unleashed-rx78', description: 'Tuyệt phẩm kỷ niệm 40 năm Gunpla với cấu trúc 5 giai đoạn lắp ráp, đèn LED đa màu.', categoryId: 1, brandId: 1, gradeId: 8, seriesId: 1, scale: '1/60', status: 'active', grade: 'PG', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p16', sku: 'PG-UNLEASHED', price: 6200000, stock: 6, reserved: 0, image: '/assets/products/pg-unleashed.jpg' },
+    { id: 'p17', name: 'Mega Size 1/48 RX-78-2 Gundam', slug: 'mega-size-rx78', description: 'Kích thước khổng lồ cao tới 37.5cm, các mảnh ghép to bản dễ lắp và siêu ấn tượng khi trưng bày.', categoryId: 1, brandId: 1, gradeId: 9, seriesId: 1, scale: '1/48', status: 'active', grade: 'Mega Size', category: 'Mô hình Gundam', brand: 'Bandai Spirits', series: 'Universal Century', variantId: 'p17', sku: 'MEGA-RX78', price: 2150000, stock: 7, reserved: 0, image: '/assets/products/mega-rx78.jpg' },
+    { id: 'p18', name: 'Gundam Daban 8802 Strike Freedom', slug: 'daban-strike-freedom', description: 'Mô hình Gundam Daban 8802 chi tiết sắc bén phong cách Metal Build cho người chơi chuyên sâu.', categoryId: 1, brandId: 2, gradeId: 6, seriesId: 2, scale: '1/100', status: 'active', grade: 'MG', category: 'Mô hình Gundam', brand: 'Daban', series: 'Cosmic Era (SEED)', variantId: 'p18', sku: 'DABAN-8802', price: 720000, stock: 20, reserved: 0, image: '/assets/products/daban-8802.jpg' },
+    { id: 'p19', name: 'Gundam Jijia Wing Zero Custom', slug: 'jijia-wing-zero', description: 'Bộ kit ráp mẫu Wing Zero Custom từ hãng Jijia với hiệu ứng lông vũ bung cánh lộng lẫy.', categoryId: 1, brandId: 3, gradeId: 6, seriesId: 1, scale: '1/100', status: 'active', grade: 'MG', category: 'Mô hình Gundam', brand: 'Jijia', series: 'After Colony (Wing)', variantId: 'p19', sku: 'JIJIA-WING', price: 680000, stock: 15, reserved: 0, image: '/assets/products/jijia-wing.jpg' },
+    { id: 'p20', name: 'Bút kẻ lằn chìm Gundam Marker GM01 Đen', slug: 'gundam-marker-gm01', description: 'Bút ngòi kim 0.05mm chuyên dụng kẻ lằn chi tiết rãnh giáp mô hình Gundam. Mực gốc dầu cao cấp.', categoryId: 2, brandId: 1, gradeId: null, seriesId: 6, scale: 'Non-scale', status: 'active', grade: '', category: 'Bút kẻ & Dụng cụ', brand: 'Bandai Spirits', series: 'Hobby Tools', variantId: 'p20', sku: 'TOOL-GM01', price: 65000, stock: 100, reserved: 0, image: '/assets/products/tool-gm01.jpg' },
+    { id: 'p21', name: 'Bộ bút tô Gundam Metallic Marker GMS121', slug: 'metallic-marker-gms121', description: 'Set 6 cây bút tô ánh kim loại (Vàng, Bạc, Đồng, Xanh, Đỏ kim loại) tạo điểm nhấn cơ khí.', categoryId: 2, brandId: 1, gradeId: null, seriesId: 6, scale: 'Non-scale', status: 'active', grade: '', category: 'Bút kẻ & Dụng cụ', brand: 'Bandai Spirits', series: 'Hobby Tools', variantId: 'p21', sku: 'TOOL-GMS121', price: 320000, stock: 45, reserved: 0, image: '/assets/products/tool-gms121.jpg' },
+    { id: 'p22', name: 'Kìm cắt mô hình Bandai Entry Nipper', slug: 'bandai-nipper', description: 'Kìm cắt lưỡi thép chuyên dụng cắt runner mô hình chính hãng Bandai Spirits, vết cắt phẳng mịn.', categoryId: 2, brandId: 1, gradeId: null, seriesId: 6, scale: 'Non-scale', status: 'active', grade: '', category: 'Bút kẻ & Dụng cụ', brand: 'Bandai Spirits', series: 'Hobby Tools', variantId: 'p22', sku: 'TOOL-NIPPER', price: 195000, stock: 50, reserved: 0, image: '/assets/products/tool-nipper.jpg' },
+    { id: 'p23', name: 'Cọ vẽ & dụng cụ chuyên dụng Bandai Tool Set', slug: 'bandai-tool-set', description: 'Bộ cọ tỉa chi tiết, nhíp gắp decal và dao gọt bavia chuyên dụng cho mô hình Gunpla.', categoryId: 2, brandId: 1, gradeId: null, seriesId: 6, scale: 'Non-scale', status: 'active', grade: '', category: 'Bút kẻ & Dụng cụ', brand: 'Bandai Spirits', series: 'Hobby Tools', variantId: 'p23', sku: 'TOOL-BRUSH-SET', price: 260000, stock: 35, reserved: 0, image: '/assets/products/tool-brush-set.jpg' },
+    { id: 'p24', name: 'Mô hình Tàu Thousand Sunny Grand Ship', slug: 'onepiece-thousand-sunny', description: 'Mô hình thuyền hải tặc Thousand Sunny của băng Mũ Rơm từ Bandai Spirits, kèm đế sóng biển.', categoryId: 3, brandId: 1, gradeId: null, seriesId: 5, scale: 'Non-scale', status: 'active', grade: '', category: 'Mô hình One Piece', brand: 'Bandai Spirits', series: 'One Piece Grand Ship', variantId: 'p24', sku: 'OP-SUNNY', price: 480000, stock: 20, reserved: 0, image: '/assets/products/op-sunny.jpg' },
+    { id: 'p25', name: 'Mô hình Tàu Going Merry Memorial Color', slug: 'onepiece-going-merry', description: 'Mô hình thuyền Going Merry kỷ niệm màu đặc biệt, kèm đầy đủ cờ hải tặc và mỏ neo.', categoryId: 3, brandId: 1, gradeId: null, seriesId: 5, scale: 'Non-scale', status: 'active', grade: '', category: 'Mô hình One Piece', brand: 'Bandai Spirits', series: 'One Piece Grand Ship', variantId: 'p25', sku: 'OP-MERRY', price: 490000, stock: 15, reserved: 0, image: '/assets/products/op-merry.jpg' },
+    { id: 'p26', name: 'One Piece Grand Ship Collection Red Force', slug: 'onepiece-red-force', description: 'Chiến thuyền Red Force oai vệ của Tứ Hoàng Shanks Tóc Đỏ thuộc dòng Grand Ship Collection.', categoryId: 3, brandId: 1, gradeId: null, seriesId: 5, scale: 'Non-scale', status: 'active', grade: '', category: 'Mô hình One Piece', brand: 'Bandai Spirits', series: 'One Piece Grand Ship', variantId: 'p26', sku: 'OP-RED-FORCE', price: 520000, stock: 18, reserved: 0, image: '/assets/products/op-red-force.jpg' }
 ];
 
-let products = [], cart = [], wishlist = [], orders = [], adminProducts = [], adminUsers = [];
+let products = [],
+    cart = [],
+    wishlist = [],
+    orders = [],
+    adminProducts = [],
+    adminUsers = [];
 let metadata = { categories: [], brands: [], grades: [], series: [] };
-let grade = 'all', tab = 'overview', pending = false, adminReady = false;
-let catalogPage = 1, catalogPageSize = 24;
-let discountPercent = 0, appliedDiscountCode = '';
-let adminSearchQuery = '', adminFilterGrade = 'all', adminFilterStatus = 'all', adminFilterRole = 'all';
-let adminFilterPayStatus = 'all', adminFilterStock = 'all', adminFilterCat = 'all';
-let adminTimeRange = 'this_month', adminStatsData = null;
-let adminPage = 1, adminPageSize = 10;
-let adminProductPage = 1, adminProductPageSize = 10;
+let grade = 'all',
+    tab = 'overview',
+    pending = false,
+    adminReady = false;
+let catalogPage = 1,
+    catalogPageSize = 24;
+let discountPercent = 0,
+    appliedDiscountCode = '';
+let adminSearchQuery = '',
+    adminFilterGrade = 'all',
+    adminFilterStatus = 'all',
+    adminFilterRole = 'all';
+let adminFilterPayStatus = 'all',
+    adminFilterStock = 'all',
+    adminFilterCat = 'all';
+let adminTimeRange = 'this_month',
+    adminStatsData = null;
+let adminPage = 1,
+    adminPageSize = 10;
+let adminProductPage = 1,
+    adminProductPageSize = 10;
 let adminSidebarCollapsed = false;
 let currentDetailQty = 1;
 let currentAuthMode = 'login';
@@ -56,211 +74,212 @@ const money = (n) => new Intl.NumberFormat('vi-VN', { style: 'currency', currenc
 const esc = (x) => String(x ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const orderStatusLabels = {
-  pending: 'Chờ xác nhận',
-  confirmed: 'Đã xác nhận',
-  processing: 'Đang chuẩn bị hàng',
-  shipping: 'Đang giao hàng',
-  delivered: 'Đã giao hàng',
-  completed: 'Hoàn tất',
-  cancelled: 'Đã hủy',
-  failed_delivery: 'Giao không thành công',
-  returning: 'Đang hoàn về',
-  returned: 'Đã hoàn về'
+    pending: 'Chờ xác nhận',
+    confirmed: 'Đã xác nhận',
+    processing: 'Đang chuẩn bị hàng',
+    shipping: 'Đang giao hàng',
+    delivered: 'Đã giao hàng',
+    completed: 'Hoàn tất',
+    cancelled: 'Đã hủy',
+    failed_delivery: 'Giao không thành công',
+    returning: 'Đang hoàn về',
+    returned: 'Đã hoàn về'
 };
 
 const allowedTransitions = {
-  pending: ['confirmed', 'cancelled'],
-  confirmed: ['processing', 'cancelled'],
-  processing: ['shipping', 'cancelled'],
-  shipping: ['delivered', 'failed_delivery'],
-  failed_delivery: ['shipping', 'returning'],
-  returning: ['returned'],
-  delivered: ['completed'],
-  completed: [],
-  cancelled: [],
-  returned: []
+    pending: ['confirmed', 'cancelled'],
+    confirmed: ['processing', 'cancelled'],
+    processing: ['shipping', 'cancelled'],
+    shipping: ['delivered', 'failed_delivery'],
+    failed_delivery: ['shipping', 'returning'],
+    returning: ['returned'],
+    delivered: ['completed'],
+    completed: [],
+    cancelled: [],
+    returned: []
 };
 
 const paymentStatusLabels = {
-  unpaid: 'Chưa thanh toán',
-  partially_paid: 'Thanh toán một phần',
-  paid: 'Đã thanh toán',
-  partially_refunded: 'Hoàn tiền một phần',
-  refunded: 'Đã hoàn tiền'
+    unpaid: 'Chưa thanh toán',
+    partially_paid: 'Thanh toán một phần',
+    paid: 'Đã thanh toán',
+    partially_refunded: 'Hoàn tiền một phần',
+    refunded: 'Đã hoàn tiền'
 };
 
 const codStatusLabels = {
-  uncollected: 'Chưa thu COD',
-  carrier_collected: 'ĐVVC đã thu tiền',
-  reconciled: 'Đã đối soát vào ví'
+    uncollected: 'Chưa thu COD',
+    carrier_collected: 'ĐVVC đã thu tiền',
+    reconciled: 'Đã đối soát vào ví'
 };
 
 const statuses = orderStatusLabels;
 const nextStatuses = allowedTransitions;
 
 let timer;
+
 function toast(message) {
-  const t = $('#toast');
-  if (!t) return;
-  t.textContent = message;
-  t.classList.add('visible');
-  clearTimeout(timer);
-  timer = setTimeout(() => t.classList.remove('visible'), 3500);
+    const t = $('#toast');
+    if (!t) return;
+    t.textContent = message;
+    t.classList.add('visible');
+    clearTimeout(timer);
+    timer = setTimeout(() => t.classList.remove('visible'), 3500);
 }
 
 function openPanel(title, body) {
-  $('#panel-title').textContent = title;
-  $('#panel-body').innerHTML = body;
-  if (!panel.open) panel.showModal();
-  document.body.style.overflow = 'hidden';
+    $('#panel-title').textContent = title;
+    $('#panel-body').innerHTML = body;
+    if (!panel.open) panel.showModal();
+    document.body.style.overflow = 'hidden';
 }
 
 function showError(e) {
-  toast(e instanceof Error ? e.message : 'Có lỗi xảy ra.');
-  if (e instanceof ApiError && e.status === 401) {
-    setUser(null);
-    adminReady = false;
-    cart = [];
-    count();
-  }
+    toast(e instanceof Error ? e.message : 'Có lỗi xảy ra.');
+    if (e instanceof ApiError && e.status === 401) {
+        setUser(null);
+        adminReady = false;
+        cart = [];
+        count();
+    }
 }
 
 async function run(fn) {
-  if (pending) return;
-  pending = true;
-  try {
-    await fn();
-  } catch (e) {
-    showError(e);
-  } finally {
-    pending = false;
-  }
+    if (pending) return;
+    pending = true;
+    try {
+        await fn();
+    } catch (e) {
+        showError(e);
+    } finally {
+        pending = false;
+    }
 }
 
 function count() {
-  const el = $('.cart-count');
-  if (el) el.textContent = String(cart.reduce((s, x) => s + x.quantity, 0));
+    const el = $('.cart-count');
+    if (el) el.textContent = String(cart.reduce((s, x) => s + x.quantity, 0));
 }
 
 async function refreshCart() {
-  try {
-    cart = user ? await api('/cart') : [];
-  } catch (e) {
-    cart = [];
-  }
-  count();
+    try {
+        cart = user ? await api('/cart') : [];
+    } catch (e) {
+        cart = [];
+    }
+    count();
 }
 
 function setGrade(value) {
-  grade = value;
-  catalogPage = 1;
-  const buttonGrade = (value === 'RE') ? 'IBO' : value;
-  document.querySelectorAll('[data-grade]').forEach(b => {
-    const isSelected = b.dataset.grade === buttonGrade;
-    b.classList.toggle('selected', isSelected);
-    b.setAttribute('aria-pressed', String(isSelected));
-  });
-  renderProducts();
+    grade = value;
+    catalogPage = 1;
+    const buttonGrade = (value === 'RE') ? 'IBO' : value;
+    document.querySelectorAll('[data-grade]').forEach(b => {
+        const isSelected = b.dataset.grade === buttonGrade;
+        b.classList.toggle('selected', isSelected);
+        b.setAttribute('aria-pressed', String(isSelected));
+    });
+    renderProducts();
 }
 
 function renderProducts() {
-  const query = (input('#search')?.value || '').toLowerCase().trim();
-  const brandSelect = document.querySelector('#brand-select')?.value || 'all';
-  let found = products.filter(p => {
-    let matchGrade = false;
-    if (grade === 'all') {
-      matchGrade = true;
-    } else if (grade === 'IBO' || grade === 'RE') {
-      matchGrade = (p.grade === 'IBO' || p.grade === 'RE' || p.grade === 'RE/100');
-    } else if (grade === 'TOOLS') {
-      matchGrade = (p.grade === 'TOOLS' || (p.category && (p.category.toLowerCase().includes('bút') || p.category.toLowerCase().includes('dụng cụ'))));
-    } else if (grade === 'ONEPIECE') {
-      matchGrade = (p.grade === 'ONEPIECE' || (p.category && p.category.toLowerCase().includes('one piece')));
-    } else {
-      matchGrade = (p.grade === grade);
+    const query = (input('#search')?.value || '').toLowerCase().trim();
+    const brandSelect = document.querySelector('#brand-select')?.value || 'all';
+    let found = products.filter(p => {
+        let matchGrade = false;
+        if (grade === 'all') {
+            matchGrade = true;
+        } else if (grade === 'IBO' || grade === 'RE') {
+            matchGrade = (p.grade === 'IBO' || p.grade === 'RE' || p.grade === 'RE/100');
+        } else if (grade === 'TOOLS') {
+            matchGrade = (p.grade === 'TOOLS' || (p.category && (p.category.toLowerCase().includes('bút') || p.category.toLowerCase().includes('dụng cụ'))));
+        } else if (grade === 'ONEPIECE') {
+            matchGrade = (p.grade === 'ONEPIECE' || (p.category && p.category.toLowerCase().includes('one piece')));
+        } else {
+            matchGrade = (p.grade === grade);
+        }
+
+        let matchBrand = true;
+        if (brandSelect !== 'all') {
+            matchBrand = p.brand && p.brand.toLowerCase().includes(brandSelect.toLowerCase());
+        }
+
+        let matchQuery = true;
+        if (query) {
+            const fullText = `${p.name} ${p.sku || ''} ${p.brand || ''} ${p.series || ''} ${p.category || ''} ${p.grade || ''} ${p.description || ''}`.toLowerCase();
+            matchQuery = fullText.includes(query);
+        }
+
+        return matchGrade && matchBrand && matchQuery;
+    });
+    const sort = input('#sort')?.value || 'featured';
+    if (sort === 'price-up') found.sort((a, b) => a.price - b.price);
+    if (sort === 'price-down') found.sort((a, b) => b.price - a.price);
+
+    const totalPages = Math.max(1, Math.ceil(found.length / catalogPageSize));
+    if (catalogPage > totalPages) catalogPage = totalPages;
+    if (catalogPage < 1) catalogPage = 1;
+    const paged = found.slice((catalogPage - 1) * catalogPageSize, catalogPage * catalogPageSize);
+
+    if ($('#result-count')) {
+        $('#result-count').textContent = `${found.length.toLocaleString('vi-VN')} mô hình & sản phẩm (Trang ${catalogPage} / ${totalPages})`;
     }
 
-    let matchBrand = true;
-    if (brandSelect !== 'all') {
-      matchBrand = p.brand && p.brand.toLowerCase().includes(brandSelect.toLowerCase());
+    if ($('#products')) {
+        $('#products').innerHTML = paged.map(renderProductCardHtml).join('') || '<div class="empty"><strong>Chưa tìm thấy mô hình</strong>Thử chọn dòng sản phẩm hoặc từ khóa khác.</div>';
     }
 
-    let matchQuery = true;
-    if (query) {
-      const fullText = `${p.name} ${p.sku || ''} ${p.brand || ''} ${p.series || ''} ${p.category || ''} ${p.grade || ''} ${p.description || ''}`.toLowerCase();
-      matchQuery = fullText.includes(query);
+    // Render pagination buttons
+    const paginEl = $('#catalog-pagination');
+    if (paginEl) {
+        if (totalPages <= 1) {
+            paginEl.innerHTML = '';
+        } else {
+            let pagesHtml = '';
+            pagesHtml += `<button type="button" class="button" data-catalog-page="1" ${catalogPage === 1 ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : 'style="min-height:38px;padding:6px 14px;"'}>« Trang đầu</button>`;
+            pagesHtml += `<button type="button" class="button" data-catalog-page="${catalogPage - 1}" ${catalogPage === 1 ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : 'style="min-height:38px;padding:6px 12px;"'}>‹ Trước</button>`;
+
+            let startP = Math.max(1, catalogPage - 2);
+            let endP = Math.min(totalPages, startP + 4);
+            if (endP - startP < 4) startP = Math.max(1, endP - 4);
+            if (startP < 1) startP = 1;
+
+            for (let p = startP; p <= endP; p++) {
+                const isCur = p === catalogPage;
+                pagesHtml += `<button type="button" class="button ${isCur ? 'primary' : ''}" data-catalog-page="${p}" style="min-height:38px;padding:6px 14px;${isCur ? 'background:var(--red,#e60012);color:#fff;font-weight:800;' : ''}">${p}</button>`;
+            }
+
+            pagesHtml += `<button type="button" class="button" data-catalog-page="${catalogPage + 1}" ${catalogPage === totalPages ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : 'style="min-height:38px;padding:6px 12px;"'}>Sau ›</button>`;
+            pagesHtml += `<button type="button" class="button" data-catalog-page="${totalPages}" ${catalogPage === totalPages ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : 'style="min-height:38px;padding:6px 14px;"'}>Trang cuối »</button>`;
+
+            paginEl.innerHTML = pagesHtml;
+        }
     }
-
-    return matchGrade && matchBrand && matchQuery;
-  });
-  const sort = input('#sort')?.value || 'featured';
-  if (sort === 'price-up') found.sort((a, b) => a.price - b.price);
-  if (sort === 'price-down') found.sort((a, b) => b.price - a.price);
-
-  const totalPages = Math.max(1, Math.ceil(found.length / catalogPageSize));
-  if (catalogPage > totalPages) catalogPage = totalPages;
-  if (catalogPage < 1) catalogPage = 1;
-  const paged = found.slice((catalogPage - 1) * catalogPageSize, catalogPage * catalogPageSize);
-
-  if ($('#result-count')) {
-    $('#result-count').textContent = `${found.length.toLocaleString('vi-VN')} mô hình & sản phẩm (Trang ${catalogPage} / ${totalPages})`;
-  }
-
-  if ($('#products')) {
-    $('#products').innerHTML = paged.map(renderProductCardHtml).join('') || '<div class="empty"><strong>Chưa tìm thấy mô hình</strong>Thử chọn dòng sản phẩm hoặc từ khóa khác.</div>';
-  }
-
-  // Render pagination buttons
-  const paginEl = $('#catalog-pagination');
-  if (paginEl) {
-    if (totalPages <= 1) {
-      paginEl.innerHTML = '';
-    } else {
-      let pagesHtml = '';
-      pagesHtml += `<button type="button" class="button" data-catalog-page="1" ${catalogPage === 1 ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : 'style="min-height:38px;padding:6px 14px;"'}>« Trang đầu</button>`;
-      pagesHtml += `<button type="button" class="button" data-catalog-page="${catalogPage - 1}" ${catalogPage === 1 ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : 'style="min-height:38px;padding:6px 12px;"'}>‹ Trước</button>`;
-
-      let startP = Math.max(1, catalogPage - 2);
-      let endP = Math.min(totalPages, startP + 4);
-      if (endP - startP < 4) startP = Math.max(1, endP - 4);
-      if (startP < 1) startP = 1;
-
-      for (let p = startP; p <= endP; p++) {
-        const isCur = p === catalogPage;
-        pagesHtml += `<button type="button" class="button ${isCur ? 'primary' : ''}" data-catalog-page="${p}" style="min-height:38px;padding:6px 14px;${isCur ? 'background:var(--red,#e60012);color:#fff;font-weight:800;' : ''}">${p}</button>`;
-      }
-
-      pagesHtml += `<button type="button" class="button" data-catalog-page="${catalogPage + 1}" ${catalogPage === totalPages ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : 'style="min-height:38px;padding:6px 12px;"'}>Sau ›</button>`;
-      pagesHtml += `<button type="button" class="button" data-catalog-page="${totalPages}" ${catalogPage === totalPages ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : 'style="min-height:38px;padding:6px 14px;"'}>Trang cuối »</button>`;
-
-      paginEl.innerHTML = pagesHtml;
-    }
-  }
 }
 
 function getProductDiscount(p) {
-  if (p.originalPrice && p.originalPrice > p.price) {
-    return Math.round((1 - p.price / p.originalPrice) * 100);
-  }
-  const discountRates = [8, 10, 12, 14, 15, 18, 20, 25];
-  const str = String(p.id || p._id || p.name || '');
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) & 0xffffffff;
-  return discountRates[Math.abs(hash) % discountRates.length];
+    if (p.originalPrice && p.originalPrice > p.price) {
+        return Math.round((1 - p.price / p.originalPrice) * 100);
+    }
+    const discountRates = [8, 10, 12, 14, 15, 18, 20, 25];
+    const str = String(p.id || p._id || p.name || '');
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) & 0xffffffff;
+    return discountRates[Math.abs(hash) % discountRates.length];
 }
 
 function renderProductCardHtml(p) {
-  const pid = p.id || p._id || p.variantId;
-  const gradeClass = (p.grade || 'kit').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const inStock = ((p.stock !== undefined ? p.stock : p.quantity) ?? 0) > 0;
-  const imgSrc = esc(p.image || '/assets/hero-poster.jpg');
-  const disc = getProductDiscount(p);
-  const oldPrice = p.originalPrice || Math.round((p.price / (1 - disc / 100)) / 10000) * 10000;
-  const brandName = esc(p.brand || 'Bandai Spirits');
-  const gradeLabel = esc(p.grade || 'MÔ HÌNH');
-  const wishActive = isWishlisted(pid);
+    const pid = p.id || p._id || p.variantId;
+    const gradeClass = (p.grade || 'kit').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const inStock = ((p.stock !== undefined ? p.stock : p.quantity) ?? 0) > 0;
+    const imgSrc = esc(p.image || '/assets/hero-poster.jpg');
+    const disc = getProductDiscount(p);
+    const oldPrice = p.originalPrice || Math.round((p.price / (1 - disc / 100)) / 10000) * 10000;
+    const brandName = esc(p.brand || 'Bandai Spirits');
+    const gradeLabel = esc(p.grade || 'MÔ HÌNH');
+    const wishActive = isWishlisted(pid);
 
-  return `<article class="product-card">
+    return `<article class="product-card">
     <button type="button" class="card-wishlist-btn ${wishActive ? 'active' : ''}" data-wishlist-toggle="${pid}" aria-label="Yêu thích ${esc(p.name)}" title="${wishActive ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}">
       <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
     </button>
@@ -292,77 +311,75 @@ function renderProductCardHtml(p) {
 }
 
 function renderHomeFeatured() {
-  const list = (products && products.length) ? products : DEFAULT_PRODUCTS;
+    const list = (products && products.length) ? products : DEFAULT_PRODUCTS;
 
-  // 1. MÔ HÌNH MỚI VỀ (#home-new-products) - 12 sản phẩm mới nhất
-  const newGrid = $('#home-new-products');
-  if (newGrid) {
-    const newItems = list.slice(0, 12);
-    newGrid.innerHTML = newItems.map(renderProductCardHtml).join('');
-  }
+    // 1. MÔ HÌNH MỚI VỀ (#home-new-products) - 12 sản phẩm mới nhất
+    const newGrid = $('#home-new-products');
+    if (newGrid) {
+        const newItems = list.slice(0, 12);
+        newGrid.innerHTML = newItems.map(renderProductCardHtml).join('');
+    }
 
-  // 2. MÔ HÌNH SNAA (#home-snaa-products) - 12 sản phẩm SNAA
-  const snaaGrid = $('#home-snaa-products');
-  if (snaaGrid) {
-    const snaaItems = list.filter(p => /snaa/i.test(p.name) || /snaa/i.test(p.brand || '') || /snaa/i.test(p.series || '')).slice(0, 12);
-    snaaGrid.innerHTML = (snaaItems.length ? snaaItems : list.slice(12, 24)).map(renderProductCardHtml).join('');
-  }
+    // 2. MÔ HÌNH SNAA (#home-snaa-products) - 12 sản phẩm SNAA
+    const snaaGrid = $('#home-snaa-products');
+    if (snaaGrid) {
+        const snaaItems = list.filter(p => /snaa/i.test(p.name) || /snaa/i.test(p.brand || '') || /snaa/i.test(p.series || '')).slice(0, 12);
+        snaaGrid.innerHTML = (snaaItems.length ? snaaItems : list.slice(12, 24)).map(renderProductCardHtml).join('');
+    }
 
-  // 3. MÔ HÌNH GUNDAM BANDAI HOT (#home-bandai-products) - 12 sản phẩm Bandai
-  const bandaiGrid = $('#home-bandai-products');
-  if (bandaiGrid) {
-    const bandaiItems = list.filter(p => {
-      const isSnaa = /snaa/i.test(p.name) || /snaa/i.test(p.brand || '') || /snaa/i.test(p.series || '');
-      const isTool = p.grade === 'TOOLS' || /dụng cụ|kìm|dao|nhíp|marker|bút|tamiya/i.test((p.category || '') + ' ' + (p.name || ''));
-      if (isSnaa || isTool) return false;
-      return /bandai/i.test(p.brand || '') || /gundam|hg|rg|mg|pg|sd/i.test(p.name || '');
-    }).slice(0, 12);
-    bandaiGrid.innerHTML = (bandaiItems.length ? bandaiItems : list.slice(0, 12)).map(renderProductCardHtml).join('');
-  }
+    // 3. MÔ HÌNH GUNDAM BANDAI HOT (#home-bandai-products) - 12 sản phẩm Bandai
+    const bandaiGrid = $('#home-bandai-products');
+    if (bandaiGrid) {
+        const bandaiItems = list.filter(p => {
+            const isSnaa = /snaa/i.test(p.name) || /snaa/i.test(p.brand || '') || /snaa/i.test(p.series || '');
+            const isTool = p.grade === 'TOOLS' || /dụng cụ|kìm|dao|nhíp|marker|bút|tamiya/i.test((p.category || '') + ' ' + (p.name || ''));
+            if (isSnaa || isTool) return false;
+            return /bandai/i.test(p.brand || '') || /gundam|hg|rg|mg|pg|sd/i.test(p.name || '');
+        }).slice(0, 12);
+        bandaiGrid.innerHTML = (bandaiItems.length ? bandaiItems : list.slice(0, 12)).map(renderProductCardHtml).join('');
+    }
 
-  // 4. DỤNG CỤ & PHỤ KIỆN LẮP RÁP (#home-tools-products) - 12 sản phẩm dụng cụ
-  const toolsGrid = $('#home-tools-products');
-  if (toolsGrid) {
-    const toolItems = list.filter(p => p.grade === 'TOOLS' || /dụng cụ|kìm|dao|nhíp|marker|tamiya|bút|giấy nhám|sơn|cement|thước/i.test((p.category || '') + ' ' + (p.name || ''))).slice(0, 12);
-    toolsGrid.innerHTML = (toolItems.length ? toolItems : list.slice(24, 36)).map(renderProductCardHtml).join('');
-  }
+    // 4. DỤNG CỤ & PHỤ KIỆN LẮP RÁP (#home-tools-products) - 12 sản phẩm dụng cụ
+    const toolsGrid = $('#home-tools-products');
+    if (toolsGrid) {
+        const toolItems = list.filter(p => p.grade === 'TOOLS' || /dụng cụ|kìm|dao|nhíp|marker|tamiya|bút|giấy nhám|sơn|cement|thước/i.test((p.category || '') + ' ' + (p.name || ''))).slice(0, 12);
+        toolsGrid.innerHTML = (toolItems.length ? toolItems : list.slice(24, 36)).map(renderProductCardHtml).join('');
+    }
 }
 
 async function refreshProducts() {
-  try {
-    const list = await api('/products');
-    products = list && list.length ? list : DEFAULT_PRODUCTS;
-  } catch (e) {
-    products = DEFAULT_PRODUCTS;
-  }
-  renderProducts();
-  renderHomeFeatured();
+    try {
+        const list = await api('/products');
+        products = list && list.length ? list : DEFAULT_PRODUCTS;
+    } catch (e) {
+        products = DEFAULT_PRODUCTS;
+    }
+    renderProducts();
+    renderHomeFeatured();
 }
 
-/* ==========================================================================
-   DIRTYCOINS-STYLE DEDICATED PRODUCT DETAIL PAGE (Image 3)
-   ========================================================================== */
+
 function renderProductDetailPage(id) {
-  const p = products.find(x => x.id == id || x._id == id);
-  const container = $('#page-product-detail');
-  if (!p || !container) {
-    toast('Không tìm thấy sản phẩm.');
-    location.hash = 'catalog';
-    return;
-  }
+    const p = products.find(x => x.id == id || x._id == id);
+    const container = $('#page-product-detail');
+    if (!p || !container) {
+        toast('Không tìm thấy sản phẩm.');
+        location.hash = 'catalog';
+        return;
+    }
 
-  currentDetailQty = 1;
-  const inStock = p.stock > 0;
-  const galleryImages = (p.images && p.images.length > 0) ? p.images : [p.image || '/assets/hero-poster.jpg'];
+    currentDetailQty = 1;
+    const inStock = p.stock > 0;
+    const galleryImages = (p.images && p.images.length > 0) ? p.images : [p.image || '/assets/hero-poster.jpg'];
 
-  const thumbnailsHtml = galleryImages.map((imgUrl, idx) => {
-    const isActive = idx === 0 ? 'active' : '';
-    return `<button type="button" class="pdetail-thumb-btn ${isActive}" data-switch-thumb="${idx}" data-img-src="${esc(imgUrl)}" title="Ảnh chi tiết ${idx + 1}">
+    const thumbnailsHtml = galleryImages.map((imgUrl, idx) => {
+        const isActive = idx === 0 ? 'active' : '';
+        return `<button type="button" class="pdetail-thumb-btn ${isActive}" data-switch-thumb="${idx}" data-img-src="${esc(imgUrl)}" title="Ảnh chi tiết ${idx + 1}">
       <img src="${esc(imgUrl)}" alt="${esc(p.name)} - Ảnh ${idx + 1}" onerror="this.src='/assets/hero-poster.jpg'">
     </button>`;
-  }).join('');
+    }).join('');
 
-  container.innerHTML = `
+    container.innerHTML = `
     <div class="pdetail-container">
       <div class="pdetail-breadcrumb">
         <a href="#home">Trang chủ</a>
