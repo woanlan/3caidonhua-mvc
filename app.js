@@ -42,6 +42,7 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'frontend')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Đăng ký sử dụng routes (hỗ trợ cả chuẩn bài giảng và chuẩn frontend SPA)

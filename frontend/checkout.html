@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thanh Toán & Đặt Hàng — 3caidonhua</title>
+  <link rel="icon" type="image/png" href="assets/logo3cai.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body style="background:#090c10;color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+
+  <!-- HEADER NAVBAR -->
+  <header style="background:rgba(15,23,42,0.95);border-bottom:1px solid #334155;position:sticky;top:0;z-index:999;backdrop-filter:blur(10px);padding:14px 24px;">
+    <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px;">
+      <a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <img src="assets/logo3cai.png" alt="3caidonhua" style="height:38px;object-fit:contain;">
+        <span style="font-weight:900;color:#fff;font-size:18px;letter-spacing:1px;">3 CÂY ĐÒN HỨA</span>
+      </a>
+
+      <nav style="display:flex;align-items:center;gap:22px;font-size:14.5px;font-weight:600;">
+        <a href="index.html" style="color:#cbd5e1;text-decoration:none;">Trang chủ</a>
+        <a href="products.html" style="color:#cbd5e1;text-decoration:none;">Bộ sưu tập</a>
+        <a href="orders.html" style="color:#cbd5e1;text-decoration:none;">Tra cứu đơn</a>
+        <a href="cart.html" style="color:#cbd5e1;text-decoration:none;position:relative;">
+          🛒 Giỏ hàng
+          <span id="cart-badge" style="display:none;position:absolute;top:-8px;right:-14px;background:#e60012;color:#fff;font-size:11px;font-weight:800;padding:1px 6px;border-radius:10px;">0</span>
+        </a>
+      </nav>
+
+      <div id="nav-user-area" style="display:flex;align-items:center;gap:12px;"></div>
+    </div>
+  </header>
+
+  <main style="max-width:1200px;margin:36px auto 60px;padding:0 24px;">
+    <h1 style="font-size:24px;font-weight:800;color:#fff;margin-bottom:24px;">XÁC NHẬN ĐƠN HÀNG &amp; THANH TOÁN</h1>
+
+    <!-- Khung đặt hàng nạp động từ checkout.js -->
+    <div id="checkout-container"></div>
+  </main>
+
+  <!-- SCRIPT MODULES TÁCH RỜI -->
+  <script type="module" src="js/api.js"></script>
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/cart.js"></script>
+  <script type="module" src="js/checkout.js"></script>
+</body>
+</html>

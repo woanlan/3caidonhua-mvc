@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "dev": "nodemon ./bin/www"
+    "dev": "nodemon ./bin/www",
+    "start:backend": "node ./backend/bin/www",
+    "dev:backend": "nodemon ./backend/bin/www"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

@@ -1,13 +1,17 @@
+// ====================================================================================
+// [NGHIỆP VỤ TẢI LÊN ẢNH / MULTER] - upload.js
+// Xử lý upload ảnh đơn (single) hoặc nhiều ảnh (multiple) vào thư mục public/images
+// ====================================================================================
+
 const express = require('express');
 const router = express.Router();
 const upload = require('../utils/Upload');
 
 /**
- * Routes Upload File (Single & Multiple)
- * Theo đúng chuẩn tài liệu bài giảng Google Doc môn WEB503
+ * [NGHIỆP VỤ TẢI LÊN ẢNH] - 1. Upload ảnh đơn (Single file)
+ * Endpoint: POST /upload hoặc POST /api/upload
+ * FormData key: 'image'
  */
-
-// 1. Upload Single File (POST /upload hoặc POST /api/upload)
 router.post('/upload', [upload.single('image')], async (req, res, next) => {
     try {
         const { file } = req;
@@ -23,7 +27,11 @@ router.post('/upload', [upload.single('image')], async (req, res, next) => {
     }
 });
 
-// 2. Upload Multiple Files (POST /uploads hoặc POST /api/uploads, tối đa 9 file)
+/**
+ * [NGHIỆP VỤ TẢI LÊN ẢNH] - 2. Upload nhiều ảnh cùng lúc (Multiple files)
+ * Endpoint: POST /uploads hoặc POST /api/uploads (Tối đa 9 ảnh cùng lúc)
+ * FormData key: 'image'
+ */
 router.post('/uploads', [upload.array('image', 9)], async (req, res, next) => {
     try {
         const { files } = req;

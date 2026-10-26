@@ -879,6 +879,9 @@ function renderAuthPage(mode, prefillEmail, successMessage) {
   window.scrollTo(0, 0);
 }
 
+// ====================================================================================
+// [NGHIỆP VỤ GIỎ HÀNG - FRONTEND] - Thêm sản phẩm vào giỏ & kiểm tra tồn kho
+// ====================================================================================
 async function addToCart(id, qty = 1) {
   const p = products.find(x => x.id == id || x._id == id || x.variantId == id);
   if (!p) { toast('Sản phẩm không còn bán.'); return false; }
@@ -1185,6 +1188,9 @@ function applyPromoCode(code) {
   }
 }
 
+// ====================================================================================
+// [NGHIỆP VỤ THANH TOÁN & XÁC NHẬN ĐƠN - FRONTEND] - Màn hình thành công & QR VietQR
+// ====================================================================================
 function renderCheckoutSuccess(o, body, discount = 0, code = '') {
   const container = $('#page-checkout');
   if (!container) return;
@@ -4401,6 +4407,9 @@ async function submit(form) {
     toast('Đăng nhập thành công.');
   }
 
+  // ====================================================================================
+  // [NGHIỆP VỤ ĐẶT HÀNG / CHECKOUT - FRONTEND] - Submit đơn, gọi API và xử lý VNPAY/COD
+  // ====================================================================================
   if (form.id === 'checkout-form') {
     let fullAddress = body.address || '';
     if (body.district && !fullAddress.includes(body.district)) fullAddress += `, ${body.district}`;
@@ -4467,6 +4476,9 @@ async function submit(form) {
     return;
   }
 
+  // ====================================================================================
+  // [NGHIỆP VỤ XÁC NHẬN ĐƠN HÀNG - FRONTEND ADMIN] - Admin duyệt đơn & đổi trạng thái
+  // ====================================================================================
   if (form.id === 'admin-order-status-form') {
     const id = form.dataset.id;
     const res = await api('/admin/orders/' + id + '/status', 'PATCH', body);

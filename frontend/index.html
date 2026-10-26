@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3caidonhua — Bandai Spirits & Gunpla Collector Studio</title>
+  <link rel="icon" type="image/png" href="assets/logo3cai.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body style="background:#090c10;color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+
+  <!-- HEADER NAVBAR -->
+  <header style="background:rgba(15,23,42,0.95);border-bottom:1px solid #334155;position:sticky;top:0;z-index:999;backdrop-filter:blur(10px);padding:14px 24px;">
+    <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px;">
+      <a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <img src="assets/logo3cai.png" alt="3caidonhua" style="height:38px;object-fit:contain;">
+        <span style="font-weight:900;color:#fff;font-size:18px;letter-spacing:1px;">3 CÂY ĐÒN HỨA</span>
+      </a>
+
+      <nav style="display:flex;align-items:center;gap:22px;font-size:14.5px;font-weight:600;">
+        <a href="index.html" style="color:#e60012;text-decoration:none;">Trang chủ</a>
+        <a href="products.html" style="color:#cbd5e1;text-decoration:none;">Bộ sưu tập</a>
+        <a href="orders.html" style="color:#cbd5e1;text-decoration:none;">Tra cứu đơn</a>
+        <a href="cart.html" style="color:#cbd5e1;text-decoration:none;position:relative;">
+          🛒 Giỏ hàng
+          <span id="cart-badge" style="display:none;position:absolute;top:-8px;right:-14px;background:#e60012;color:#fff;font-size:11px;font-weight:800;padding:1px 6px;border-radius:10px;">0</span>
+        </a>
+      </nav>
+
+      <div id="nav-user-area" style="display:flex;align-items:center;gap:12px;"></div>
+    </div>
+  </header>
+
+  <!-- HERO BANNER -->
+  <section style="position:relative;background:linear-gradient(180deg, #1e1b4b 0%, #090c10 100%);padding:70px 24px;text-align:center;border-bottom:1px solid #1e293b;">
+    <div style="max-width:800px;margin:0 auto;">
+      <span style="display:inline-block;background:#312e81;color:#a5b4fc;font-size:12.5px;font-weight:700;padding:4px 14px;border-radius:20px;text-transform:uppercase;margin-bottom:16px;">
+        Bandai Spirits & Gunpla Studio
+      </span>
+      <h1 style="font-size:38px;font-weight:900;color:#fff;margin-bottom:16px;line-height:1.2;">
+        NGHỆ THUẬT LẮP RÁP GUNPLA CHÍNH HÃNG
+      </h1>
+      <p style="color:#94a3b8;font-size:16px;margin-bottom:28px;line-height:1.6;">
+        Khám phá không gian trưng bày các dòng mô hình Gunpla cao cấp từ SD, HG, RG, MG cho đến PG Unleashed và Thuyền chiến One Piece.
+      </p>
+      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+        <a href="products.html" style="padding:14px 28px;background:#e60012;color:#fff;text-decoration:none;border-radius:8px;font-weight:800;font-size:15px;box-shadow:0 4px 20px rgba(230,0,18,0.4);">
+          Khám phá mô hình &rarr;
+        </a>
+        <a href="orders.html" style="padding:14px 24px;background:#1e293b;color:#fff;border:1px solid #334155;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;">
+          Tra cứu tiến trình đơn hàng
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- PHÂN CẤP GRADE -->
+  <section style="max-width:1200px;margin:50px auto 30px;padding:0 24px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+      <h2 style="font-size:22px;font-weight:800;color:#fff;">CÁC PHÂN CẤP GUNPLA NỔI BẬT</h2>
+      <a href="products.html" style="color:#38bdf8;text-decoration:none;font-size:14px;font-weight:600;">Xem tất cả &rarr;</a>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;">
+      <a href="products.html?grade=SD" style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;text-decoration:none;text-align:center;color:#fff;transition:0.2s;" onmouseover="this.style.borderColor='#38bdf8'" onmouseout="this.style.borderColor='#334155'">
+        <div style="font-size:24px;font-weight:900;color:#38bdf8;margin-bottom:6px;">SD Gunpla</div>
+        <div style="font-size:13px;color:#94a3b8;">Dễ thương, dễ lắp, giá tốt</div>
+      </a>
+      <a href="products.html?grade=HG" style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;text-decoration:none;text-align:center;color:#fff;transition:0.2s;" onmouseover="this.style.borderColor='#38bdf8'" onmouseout="this.style.borderColor='#334155'">
+        <div style="font-size:24px;font-weight:900;color:#10b981;margin-bottom:6px;">HG 1/144</div>
+        <div style="font-size:13px;color:#94a3b8;">High Grade chuẩn anime</div>
+      </a>
+      <a href="products.html?grade=RG" style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;text-decoration:none;text-align:center;color:#fff;transition:0.2s;" onmouseover="this.style.borderColor='#38bdf8'" onmouseout="this.style.borderColor='#334155'">
+        <div style="font-size:24px;font-weight:900;color:#f59e0b;margin-bottom:6px;">RG 1/144</div>
+        <div style="font-size:13px;color:#94a3b8;">Real Grade khung xương thực tế</div>
+      </a>
+      <a href="products.html?grade=MG" style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;text-decoration:none;text-align:center;color:#fff;transition:0.2s;" onmouseover="this.style.borderColor='#38bdf8'" onmouseout="this.style.borderColor='#334155'">
+        <div style="font-size:24px;font-weight:900;color:#e60012;margin-bottom:6px;">MG 1/100</div>
+        <div style="font-size:13px;color:#94a3b8;">Master Grade đẳng cấp cơ khí</div>
+      </a>
+      <a href="products.html?grade=ONEPIECE" style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;text-decoration:none;text-align:center;color:#fff;transition:0.2s;" onmouseover="this.style.borderColor='#38bdf8'" onmouseout="this.style.borderColor='#334155'">
+        <div style="font-size:24px;font-weight:900;color:#ec4899;margin-bottom:6px;">One Piece</div>
+        <div style="font-size:13px;color:#94a3b8;">Thuyền chiến Grand Ship</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- SẢN PHẨM MỚI VỀ -->
+  <section style="max-width:1200px;margin:40px auto 60px;padding:0 24px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+      <div>
+        <h2 style="font-size:22px;font-weight:800;color:#fff;">MÔ HÌNH NỔI BẬT &amp; BÁN CHẠY</h2>
+        <p style="color:#94a3b8;font-size:14px;margin-top:4px;">Chính hãng Bandai Spirits, nguyên seal hộp, giao hàng toàn quốc.</p>
+      </div>
+      <a href="products.html" style="padding:8px 16px;background:#1e293b;border:1px solid #334155;color:#fff;text-decoration:none;border-radius:6px;font-size:13.5px;font-weight:700;">Xem tất cả sản phẩm &rarr;</a>
+    </div>
+
+    <!-- Grid sản phẩm được nạp động từ products.js -->
+    <div id="products-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));gap:24px;"></div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="background:#0b1120;border-top:1px solid #1e293b;padding:40px 24px;color:#64748b;font-size:13.5px;text-align:center;">
+    <div style="max-width:1200px;margin:0 auto;">
+      <p style="color:#94a3b8;font-weight:600;margin-bottom:8px;">3caidonhua Gundam Studio — Đồ án môn WEB503 NodeJS Express MongoDB</p>
+      <p>© 2026 3caidonhua. Dự án học tập được xây dựng theo kiến trúc MVC chuẩn mực.</p>
+    </div>
+  </footer>
+
+  <!-- SCRIPT MODULES TÁCH RỜI -->
+  <script type="module" src="js/api.js"></script>
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/cart.js"></script>
+  <script type="module" src="js/products.js"></script>
+</body>
+</html>

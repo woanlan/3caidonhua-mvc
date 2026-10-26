@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bộ Sưu Tập Mô Hình Gundam — 3caidonhua</title>
+  <link rel="icon" type="image/png" href="assets/logo3cai.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body style="background:#090c10;color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+
+  <!-- HEADER NAVBAR -->
+  <header style="background:rgba(15,23,42,0.95);border-bottom:1px solid #334155;position:sticky;top:0;z-index:999;backdrop-filter:blur(10px);padding:14px 24px;">
+    <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px;">
+      <a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <img src="assets/logo3cai.png" alt="3caidonhua" style="height:38px;object-fit:contain;">
+        <span style="font-weight:900;color:#fff;font-size:18px;letter-spacing:1px;">3 CÂY ĐÒN HỨA</span>
+      </a>
+
+      <nav style="display:flex;align-items:center;gap:22px;font-size:14.5px;font-weight:600;">
+        <a href="index.html" style="color:#cbd5e1;text-decoration:none;">Trang chủ</a>
+        <a href="products.html" style="color:#e60012;text-decoration:none;">Bộ sưu tập</a>
+        <a href="orders.html" style="color:#cbd5e1;text-decoration:none;">Tra cứu đơn</a>
+        <a href="cart.html" style="color:#cbd5e1;text-decoration:none;position:relative;">
+          🛒 Giỏ hàng
+          <span id="cart-badge" style="display:none;position:absolute;top:-8px;right:-14px;background:#e60012;color:#fff;font-size:11px;font-weight:800;padding:1px 6px;border-radius:10px;">0</span>
+        </a>
+      </nav>
+
+      <div id="nav-user-area" style="display:flex;align-items:center;gap:12px;"></div>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <main style="max-width:1200px;margin:36px auto 60px;padding:0 24px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;flex-wrap:wrap;gap:16px;">
+      <div>
+        <h1 style="font-size:26px;font-weight:800;color:#fff;">BỘ SƯU TẬP MÔ HÌNH GUNDAM</h1>
+        <p style="color:#94a3b8;font-size:14px;margin-top:4px;">Tìm thấy <span id="product-count" style="color:#38bdf8;font-weight:700;">đang tải...</span></p>
+      </div>
+
+      <!-- THANH TÌM KIẾM & BỘ LỌC -->
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+        <input type="text" id="filter-search" placeholder="🔍 Tìm theo tên hoặc SKU..." style="padding:10px 16px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#fff;font-size:14px;min-width:240px;outline:none;">
+
+        <select id="filter-grade" style="padding:10px 14px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#fff;font-size:14px;outline:none;cursor:pointer;">
+          <option value="ALL">Tất cả Phân cấp (Grade)</option>
+          <option value="SD">SD Gundam</option>
+          <option value="HG">HG (High Grade 1/144)</option>
+          <option value="RG">RG (Real Grade 1/144)</option>
+          <option value="MG">MG (Master Grade 1/100)</option>
+          <option value="PG">PG (Perfect Grade 1/60)</option>
+          <option value="TOOLS">Bút &amp; Dụng cụ</option>
+          <option value="ONEPIECE">Mô hình One Piece</option>
+        </select>
+
+        <select id="filter-sort" style="padding:10px 14px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#fff;font-size:14px;outline:none;cursor:pointer;">
+          <option value="default">Mới nhất trước</option>
+          <option value="price_asc">Giá tăng dần ↑</option>
+          <option value="price_desc">Giá giảm dần ↓</option>
+          <option value="name">Tên A &rarr; Z</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- LƯỚI SẢN PHẨM -->
+    <div id="products-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));gap:24px;"></div>
+  </main>
+
+  <!-- SCRIPT MODULES TÁCH RỜI -->
+  <script type="module" src="js/api.js"></script>
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/cart.js"></script>
+  <script type="module" src="js/products.js"></script>
+</body>
+</html>

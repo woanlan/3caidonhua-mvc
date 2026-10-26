@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng Nhập & Đăng Ký — 3caidonhua</title>
+  <link rel="icon" type="image/png" href="assets/logo3cai.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body style="background:#090c10;color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column;">
+
+  <!-- HEADER NAVBAR -->
+  <header style="background:rgba(15,23,42,0.95);border-bottom:1px solid #334155;padding:14px 24px;">
+    <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;">
+      <a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <img src="assets/logo3cai.png" alt="3caidonhua" style="height:38px;object-fit:contain;">
+        <span style="font-weight:900;color:#fff;font-size:18px;letter-spacing:1px;">3 CÂY ĐÒN HỨA</span>
+      </a>
+      <a href="index.html" style="color:#94a3b8;text-decoration:none;font-size:14px;font-weight:600;">&larr; Về trang chủ</a>
+    </div>
+  </header>
+
+  <main style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;">
+    <div style="background:#1e293b;border:1px solid #334155;border-radius:16px;max-width:440px;width:100%;padding:32px;box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+      <!-- TAB CHUYỂN ĐỔI LOGIN / REGISTER -->
+      <div style="display:flex;border-bottom:1px solid #334155;margin-bottom:24px;">
+        <button id="tab-login" style="flex:1;padding:12px;background:none;border:none;border-bottom:2px solid #e60012;color:#fff;font-weight:700;font-size:15px;cursor:pointer;">
+          Đăng nhập
+        </button>
+        <button id="tab-register" style="flex:1;padding:12px;background:none;border:none;border-bottom:2px solid transparent;color:#94a3b8;font-weight:700;font-size:15px;cursor:pointer;">
+          Đăng ký mới
+        </button>
+      </div>
+
+      <!-- FORM ĐĂNG NHẬP -->
+      <form id="form-login" style="display:flex;flex-direction:column;gap:16px;">
+        <div>
+          <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:6px;font-weight:600;">Địa chỉ Email</label>
+          <input type="email" id="login-email" required placeholder="admin@3caidonhua.vn hoặc email của bạn" style="width:100%;padding:11px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#fff;font-size:14px;outline:none;">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:6px;font-weight:600;">Mật khẩu</label>
+          <input type="password" id="login-password" required placeholder="Nhập mật khẩu" style="width:100%;padding:11px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#fff;font-size:14px;outline:none;">
+        </div>
+
+        <div style="font-size:12px;color:#64748b;line-height:1.5;">
+          * Tài khoản Admin mẫu: <code>cuckydangiu111@gmail.com</code> / Mật khẩu: <code>adminpassword</code>
+        </div>
+
+        <button type="submit" id="btn-login-submit" style="margin-top:8px;padding:12px;background:#e60012;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:15px;cursor:pointer;">
+          Đăng nhập &rarr;
+        </button>
+      </form>
+
+      <!-- FORM ĐĂNG KÝ (ẨN MẶC ĐỊNH) -->
+      <form id="form-register" style="display:none;flex-direction:column;gap:16px;">
+        <div>
+          <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:6px;font-weight:600;">Họ và tên của bạn</label>
+          <input type="text" id="reg-name" required placeholder="Ví dụ: Nguyễn Hoàng Lân" style="width:100%;padding:11px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#fff;font-size:14px;outline:none;">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:6px;font-weight:600;">Địa chỉ Email</label>
+          <input type="email" id="reg-email" required placeholder="nhap_email@domain.com" style="width:100%;padding:11px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#fff;font-size:14px;outline:none;">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:6px;font-weight:600;">Mật khẩu</label>
+          <input type="password" id="reg-password" required placeholder="Tối thiểu 6 ký tự" style="width:100%;padding:11px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#fff;font-size:14px;outline:none;">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:6px;font-weight:600;">Xác nhận lại mật khẩu</label>
+          <input type="password" id="reg-confirm" required placeholder="Nhập lại mật khẩu phía trên" style="width:100%;padding:11px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#fff;font-size:14px;outline:none;">
+        </div>
+
+        <button type="submit" id="btn-reg-submit" style="margin-top:8px;padding:12px;background:#0284c7;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:15px;cursor:pointer;">
+          Tạo tài khoản mới &rarr;
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <!-- SCRIPT MODULES TÁCH RỜI -->
+  <script type="module" src="js/api.js"></script>
+  <script type="module">
+    import { login, register } from './js/auth.js';
+
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    const formLogin = document.getElementById('form-login');
+    const formRegister = document.getElementById('form-register');
+
+    tabLogin.onclick = () => {
+      tabLogin.style.borderColor = '#e60012';
+      tabLogin.style.color = '#fff';
+      tabRegister.style.borderColor = 'transparent';
+      tabRegister.style.color = '#94a3b8';
+      formLogin.style.display = 'flex';
+      formRegister.style.display = 'none';
+    };
+
+    tabRegister.onclick = () => {
+      tabRegister.style.borderColor = '#0284c7';
+      tabRegister.style.color = '#fff';
+      tabLogin.style.borderColor = 'transparent';
+      tabLogin.style.color = '#94a3b8';
+      formRegister.style.display = 'flex';
+      formLogin.style.display = 'none';
+    };
+
+    formLogin.onsubmit = async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const pass = document.getElementById('login-password').value;
+      const btn = document.getElementById('btn-login-submit');
+      btn.disabled = true;
+      btn.textContent = 'Đang đăng nhập...';
+      try {
+        await login(email, pass);
+        window.location.href = 'index.html';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Đăng nhập →';
+      }
+    };
+
+    formRegister.onsubmit = async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const pass = document.getElementById('reg-password').value;
+      const confirm = document.getElementById('reg-confirm').value;
+      const btn = document.getElementById('btn-reg-submit');
+
+      if (pass !== confirm) {
+        alert('Mật khẩu xác nhận không khớp!');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Đang đăng ký...';
+      try {
+        await register(name, email, pass, confirm);
+        tabLogin.click();
+        document.getElementById('login-email').value = email;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Tạo tài khoản mới →';
+      }
+    };
+  </script>
+</body>
+</html>

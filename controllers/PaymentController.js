@@ -1,9 +1,21 @@
+// ====================================================================================
+// [NGHIỆP VỤ THANH TOÁN] - PaymentController.js
+// Xử lý các phương thức thanh toán trực tuyến:
+//  1. Cổng thanh toán VNPAY Sandbox (Mã hóa SHA512, URL redirect, Return URL, IPN Webhook)
+//  2. Cổng thanh toán VietQR / SePay Webhook (Tự động nhận tiền qua biến động số dư ngân hàng)
+// ====================================================================================
+
 const crypto = require('crypto');
 const querystring = require('qs');
 const vnpayConfig = require('../config/vnpay');
 const billModel = require('../models/bill');
 
-// Hàm sắp xếp tham số theo alphabet đúng chuẩn VNPAY
+/**
+ * [NGHIỆP VỤ THANH TOÁN VNPAY] - Hàm sắp xếp tham số query theo thứ tự chữ cái A-Z
+ * Yêu cầu bắt buộc của VNPAY để tạo chuỗi dữ liệu ký băm (Hash Data) đồng nhất
+ * @param {Object} obj - Tập tham số thanh toán
+ * @returns {Object} Đối tượng đã được sort alphabet
+ */
 function sortObject(obj) {
     let sorted = {};
     let str = [];
@@ -20,7 +32,11 @@ function sortObject(obj) {
     return sorted;
 }
 
-// Format ngày giờ YYYYMMDDHHmmss theo giờ Việt Nam
+/**
+ * [NGHIỆP VỤ THANH TOÁN VNPAY] - Định dạng ngày giờ YYYYMMDDHHmmss theo múi giờ Việt Nam
+ * @param {Date} date 
+ * @returns {string} Chuỗi thời gian chuẩn VNPAY
+ */
 function formatDate(date) {
     const d = new Date(date);
     const pad = (n) => (n < 10 ? '0' + n : n);
@@ -35,7 +51,16 @@ function formatDate(date) {
 }
 
 const PaymentController = {
-    // 1. Tạo URL thanh toán chuyển hướng sang VNPAY
+    /**
+     * [NGHIỆP VỤ THANH TOÁN VNPAY] - 1. Tạo liên kết thanh toán sang VNPAY Gateway
+     * Endpoint: POST /payment/create_payment_url hoặc POST /api/payment/create_payment_url
+     * Quy trình xử lý:
+     *  - Lấy IP client, mã đơn hàng (orderId), số tiền (amount)
+     *  - Nhân số tiền x100 theo quy định của VNPAY (loại bỏ số thập phân)
+     *  - Chuẩn hóa thông tin nội dung đơn hàng (bỏ dấu tiếng Việt)
+     *  - Sắp xếp bộ tham số A-Z và ký số bằng thuật toán HMAC-SHA512 với Secret Key
+     *  - Trả về đường link VNPAY Sandbox để Frontend redirect người dùng
+     */
     createPaymentUrl: async (req, res) => {
         try {
             let ipAddr = req.headers['x-forwarded-for'] ||
@@ -62,10 +87,10 @@ const PaymentController = {
             const date = new Date();
             const createDate = formatDate(date);
 
-            // VNPAY quy định số tiền phải nhân với 100 (để khử số thập phân)
+            // Quy định của VNPAY: Số tiền thanh toán nhân 100
             const vnpAmount = Math.round(Number(amount) * 100);
 
-            // Thông tin mô tả không dấu theo chuẩn VNPAY
+            // Chuẩn hóa nội dung chuyển tiền (loại bỏ ký tự có dấu theo chuẩn VNPAY)
             const cleanOrderInfo = (orderInfo || `Thanh toan don hang ${orderId}`)
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '')
@@ -91,14 +116,15 @@ const PaymentController = {
                 vnp_Params['vnp_BankCode'] = bankCode.trim();
             }
 
-            // Sắp xếp các tham số theo bảng chữ cái A-Z
+            // BƯỚC 1: Sắp xếp tham số theo bảng chữ cái A-Z
             vnp_Params = sortObject(vnp_Params);
 
-            // Tạo chuỗi ký tự hash
+            // BƯỚC 2: Ký chữ ký số HMAC-SHA512
             const signData = querystring.stringify(vnp_Params, { encode: false });
             const hmac = crypto.createHmac('sha512', secretKey);
             const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
 
+            // BƯỚC 3: Ghép chữ ký vào URL và trả về cho Frontend
             vnp_Params['vnp_SecureHash'] = signed;
             vnpUrl += '?' + querystring.stringify(vnp_Params, { encode: false });
 
@@ -112,7 +138,18 @@ const PaymentController = {
         }
     },
 
-    // 2. Tiếp nhận kết quả thanh toán từ VNPAY chuyển hướng về (vnp_ReturnUrl)
+    /**
+     * [NGHIỆP VỤ THANH TOÁN VNPAY] - 2. Tiếp nhận kết quả thanh toán khi khách quay lại web
+     * Endpoint: GET /payment/vnpay_return
+     * Quy trình xử lý:
+     *  - Kiểm tra chữ ký an toàn (Secure Hash) tránh giả mạo kết quả giao dịch
+     *  - Kiểm tra mã phản hồi vnp_ResponseCode === '00' (thành công)
+     *  - Cập nhật đơn hàng trong MongoDB:
+     *      * paymentStatus = 'paid' (Đã thanh toán)
+     *      * status = 'confirmed' (Tự động duyệt xác nhận đơn hàng)
+     *      * Ghi nhận lịch sử giao dịch vào statusHistory
+     *  - Render trang HTML thông báo giao dịch thành công/thất bại
+     */
     vnpayReturn: async (req, res) => {
         try {
             let vnp_Params = { ...req.query };
@@ -137,13 +174,13 @@ const PaymentController = {
             let isSuccess = false;
             let message = '';
 
-            // Kiểm tra chữ ký hợp lệ
+            // KIỂM TRA TÍNH HỢP LỆ CỦA CHỮ KÝ VNPAY
             if (secureHash === signed) {
                 if (responseCode === '00') {
                     isSuccess = true;
                     message = 'Giao dịch thanh toán VNPAY thành công!';
 
-                    // Cập nhật trạng thái đơn hàng trong Database
+                    // [CẬP NHẬT TRẠNG THÁI ĐƠN HÀNG SAU KHI THANH TOÁN THÀNH CÔNG]
                     try {
                         const bill = await billModel.findById(orderId);
                         if (bill) {
@@ -173,7 +210,7 @@ const PaymentController = {
                 message = 'Chữ ký không hợp lệ (Dữ liệu giao dịch có thể bị can thiệp).';
             }
 
-            // Trả về trang thông báo kết quả giao diện đẹp
+            // Trả về giao diện thông báo kết quả giao dịch
             const html = `
 <!DOCTYPE html>
 <html lang="vi">
@@ -224,7 +261,11 @@ const PaymentController = {
         }
     },
 
-    // 3. Webhook IPN xử lý ngầm (Server call Server)
+    /**
+     * [NGHIỆP VỤ THANH TOÁN VNPAY] - 3. Webhook IPN xử lý ngầm (Server to Server)
+     * Endpoint: GET /payment/vnpay_ipn
+     * Dành cho server VNPAY gọi ngầm để đảm bảo đơn hàng được cập nhật kể cả khi khách tắt trình duyệt
+     */
     vnpayIpn: async (req, res) => {
         try {
             let vnp_Params = { ...req.query };
@@ -271,10 +312,19 @@ const PaymentController = {
         }
     },
 
-    // 4. Webhook tiếp nhận biến động số dư SePay / Open Banking (POST /payment/sepay_webhook)
+    /**
+     * [NGHIỆP VỤ THANH TOÁN VIETQR / SEPAY WEBHOOK] - 4. Tự động nhận biến động số dư ngân hàng
+     * Endpoint: POST /payment/sepay_webhook hoặc POST /payment/webhook
+     * Nghiệp vụ:
+     *  - Nhận payload webhook từ hệ thống Open Banking / SePay khi tài khoản Techcombank có tiền vào
+     *  - Tự động bóc tách mã hóa đơn (dạng HDXXXXXX) từ nội dung chuyển khoản (transfer content)
+     *  - Khớp với đơn hàng trong database và cập nhật:
+     *      * paymentStatus = 'paid'
+     *      * status = 'processing' (Đã thanh toán -> Tự động chuyển khâu Chuẩn bị hàng)
+     *      * Ghi log nhận tiền tự động vào statusHistory
+     */
     sepayWebhook: async (req, res) => {
         try {
-            // SePay gửi webhook dạng JSON khi tài khoản Techcombank có biến động số dư
             const {
                 gateway,
                 accountNumber,
@@ -286,14 +336,14 @@ const PaymentController = {
                 orderId
             } = req.body;
 
-            // Bỏ qua nếu là giao dịch trừ tiền (tiền ra khỏi tài khoản)
+            // Bỏ qua nếu là biến động tiền ra (rút tiền/chi tiêu)
             if (transferType && transferType !== 'in') {
                 return res.status(200).json({ success: true, message: 'Bỏ qua biến động tiền ra (transferType != in)' });
             }
 
             const searchStr = `${content || ''} ${referenceCode || ''} ${orderCode || ''}`.toUpperCase();
 
-            // Tìm đơn hàng theo mã đơn dạng HDXXXXXX hoặc theo ID
+            // Bóc tách mã hóa đơn HDXXXXXX từ nội dung chuyển khoản
             let bill = null;
             const matchHD = searchStr.match(/HD([A-Z0-9]{6})/i);
             if (matchHD) {
@@ -318,12 +368,12 @@ const PaymentController = {
             const paidAmount = Number(transferAmount) || Number(req.body.amount) || bill.totalMoney || 0;
             const oldStatus = bill.status;
 
-            // Tự động cập nhật thanh toán và chuyển trạng thái sang "Đang chuẩn bị hàng" (processing)
+            // Tự động chuyển đơn hàng sang trạng thái "Đang chuẩn bị hàng" (processing)
             bill.paymentStatus = 'paid';
             bill.amountPaid = paidAmount;
             bill.status = 'processing';
 
-            // Ghi nhận lịch sử luồng trạng thái
+            // Ghi nhận nhật ký tự động vào lịch sử đơn hàng
             bill.statusHistory.push({
                 fromStatus: oldStatus,
                 toStatus: 'processing',

@@ -1,10 +1,16 @@
+// ====================================================================================
+// [NGHIỆP VỤ GỬI EMAIL / NODEMAILER] - mail.js
+// Xử lý gửi email xác nhận đặt hàng, thông báo qua giao thức SMTP Gmail
+// ====================================================================================
+
 const express = require('express');
 const router = express.Router();
 const sendMail = require('../utils/sendMail');
 
 /**
- * Route Gửi Mail
- * Theo đúng chuẩn tài liệu bài giảng Google Doc môn WEB503 (Bước 3)
+ * [NGHIỆP VỤ GỬI EMAIL] - Gửi email thông báo / hóa đơn đơn hàng
+ * Endpoint: POST /send-mail hoặc POST /api/send-mail
+ * Body: { to, subject, content }
  */
 router.post("/send-mail", async function (req, res, next) {
     try {
@@ -20,12 +26,12 @@ router.post("/send-mail", async function (req, res, next) {
             html: content || "<p>Cảm ơn bạn đã ghé thăm 3caidonhua Studio!</p>"
         };
 
-        // Nếu đã cấu hình mật khẩu ứng dụng Gmail thực tế
+        // Nếu đã cấu hình mật khẩu ứng dụng Gmail thực tế trong môi trường
         if (process.env.MAIL_USER && process.env.MAIL_PASS && process.env.MAIL_PASS !== 'your_app_password_here') {
             await sendMail.transporter.sendMail(mailOptions);
             return res.json({ status: 1, message: "Gửi mail thành công" });
         } else {
-            // Môi trường dev / test mẫu: ghi nhận thành công
+            // Môi trường dev / test mẫu: ghi nhận thành công và log ra console
             console.log(`[MAIL SIMULATION] To: ${to} | Subject: ${mailOptions.subject}`);
             return res.json({
                 status: 1,

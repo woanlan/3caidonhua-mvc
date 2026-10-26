@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — 3caidonhua Gunpla</title>
+  <link rel="icon" type="image/png" href="assets/logo3cai.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin-luxury.css">
+</head>
+<body style="background:#090c10;color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+
+  <!-- HEADER NAVBAR -->
+  <header style="background:rgba(15,23,42,0.95);border-bottom:1px solid #334155;padding:14px 24px;position:sticky;top:0;z-index:999;backdrop-filter:blur(10px);">
+    <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+          <img src="assets/logo3cai.png" alt="3caidonhua" style="height:36px;object-fit:contain;">
+          <span style="font-weight:900;color:#fff;font-size:18px;">3 CÂY ĐÒN HỨA</span>
+        </a>
+        <span style="background:#7f1d1d;color:#fca5a5;font-size:11px;font-weight:800;padding:2px 8px;border-radius:4px;text-transform:uppercase;">Admin Panel</span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:16px;">
+        <a href="index.html" style="color:#94a3b8;text-decoration:none;font-size:13.5px;font-weight:600;">&larr; Xem giao diện khách</a>
+        <div id="nav-user-area"></div>
+      </div>
+    </div>
+  </header>
+
+  <main id="admin-main" style="max-width:1200px;margin:32px auto 60px;padding:0 24px;">
+    <!-- 1. THẺ THỐNG KÊ DOANH THU & SỐ LIỆU -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:18px;margin-bottom:32px;">
+      <div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;">
+        <div style="color:#94a3b8;font-size:13px;font-weight:600;margin-bottom:6px;">DOANH THU ĐƠN HÀNG</div>
+        <div id="stat-revenue" style="font-size:24px;font-weight:900;color:#10b981;">0 đ</div>
+      </div>
+      <div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;">
+        <div style="color:#94a3b8;font-size:13px;font-weight:600;margin-bottom:6px;">TỔNG SỐ ĐƠN HÀNG</div>
+        <div id="stat-orders" style="font-size:24px;font-weight:900;color:#38bdf8;">0</div>
+      </div>
+      <div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;">
+        <div style="color:#94a3b8;font-size:13px;font-weight:600;margin-bottom:6px;">TỔNG SỐ MÔ HÌNH</div>
+        <div id="stat-products" style="font-size:24px;font-weight:900;color:#f59e0b;">0</div>
+      </div>
+      <div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;">
+        <div style="color:#94a3b8;font-size:13px;font-weight:600;margin-bottom:6px;">THÀNH VIÊN ĐĂNG KÝ</div>
+        <div id="stat-users" style="font-size:24px;font-weight:900;color:#e60012;">0</div>
+      </div>
+    </div>
+
+    <!-- 2. FORM THÊM MÔ HÌNH MỚI (HỖ TRỢ UPLOAD FILE MULTER) -->
+    <div style="background:#1e293b;border:1px solid #334155;border-radius:16px;padding:24px;margin-bottom:36px;">
+      <h2 style="font-size:18px;font-weight:800;color:#fff;margin-bottom:16px;border-bottom:1px solid #334155;padding-bottom:10px;">
+        + Thêm mô hình Gunpla mới (Hỗ trợ upload ảnh Multer)
+      </h2>
+
+      <form id="form-add-product" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;font-weight:600;">Tên sản phẩm mô hình *</label>
+          <input type="text" name="name" required placeholder="Ví dụ: RG 1/144 Hi-Nu Gundam" style="width:100%;padding:10px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#fff;font-size:14px;">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;font-weight:600;">Mã SKU (Tự động hoặc tự nhập)</label>
+          <input type="text" name="sku" placeholder="Ví dụ: RG-8802" style="width:100%;padding:10px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#fff;font-size:14px;">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;font-weight:600;">Giá bán (VNĐ) *</label>
+          <input type="number" name="price" required min="0" placeholder="Ví dụ: 1150000" style="width:100%;padding:10px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#fff;font-size:14px;">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;font-weight:600;">Số lượng tồn kho ban đầu *</label>
+          <input type="number" name="quantity" required min="0" value="20" style="width:100%;padding:10px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#fff;font-size:14px;">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;font-weight:600;">Phân cấp (Grade)</label>
+          <select name="grade" style="width:100%;padding:10px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#fff;font-size:14px;">
+            <option value="HG">HG (High Grade 1/144)</option>
+            <option value="RG" selected>RG (Real Grade 1/144)</option>
+            <option value="MG">MG (Master Grade 1/100)</option>
+            <option value="PG">PG (Perfect Grade 1/60)</option>
+            <option value="SD">SD Gundam</option>
+            <option value="TOOLS">Bút &amp; Dụng cụ</option>
+            <option value="ONEPIECE">Mô hình One Piece</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;font-weight:600;">Danh mục (Category ObjectId hoặc tên)</label>
+          <input type="text" name="category" value="Mô hình Gundam" placeholder="Ví dụ: Mô hình Gundam" style="width:100%;padding:10px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#fff;font-size:14px;">
+        </div>
+
+        <!-- UPLOAD FILE MULTER -->
+        <div>
+          <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;font-weight:600;">Tải ảnh lên từ máy tính (Multer upload)</label>
+          <input type="file" id="product-file-upload" accept="image/*" style="width:100%;padding:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#fff;font-size:13px;">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;font-weight:600;">Hoặc nhập URL hình ảnh</label>
+          <input type="text" name="image_url" placeholder="/assets/products/rg-hinu.jpg" style="width:100%;padding:10px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#fff;font-size:14px;">
+        </div>
+
+        <div style="grid-column:1/-1;">
+          <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:4px;font-weight:600;">Mô tả chi tiết sản phẩm</label>
+          <textarea name="description" rows="2" placeholder="Thông số biên độ khớp, decal dán kèm, vũ khí..." style="width:100%;padding:10px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#fff;font-size:14px;"></textarea>
+        </div>
+
+        <div style="grid-column:1/-1;">
+          <button type="submit" style="padding:12px 24px;background:#e60012;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:15px;cursor:pointer;">
+            + Thêm mô hình mới
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- 3. QUẢN LÝ DANH SÁCH ĐƠN HÀNG (DUYỆT ĐƠN) -->
+    <div style="background:#1e293b;border:1px solid #334155;border-radius:16px;padding:24px;margin-bottom:36px;">
+      <h2 style="font-size:18px;font-weight:800;color:#fff;margin-bottom:16px;">Danh sách đơn hàng cần duyệt</h2>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13.5px;">
+          <thead>
+            <tr style="background:#0f172a;text-align:left;color:#93c5fd;">
+              <th style="padding:12px;">Mã đơn</th>
+              <th style="padding:12px;">Người nhận</th>
+              <th style="padding:12px;">Tổng tiền</th>
+              <th style="padding:12px;">Thanh toán</th>
+              <th style="padding:12px;">Trạng thái đơn (Duyệt)</th>
+              <th style="padding:12px;">Ngày đặt</th>
+            </tr>
+          </thead>
+          <tbody id="admin-orders-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 4. QUẢN LÝ SẢN PHẨM (XÓA / CẬP NHẬT KHO) -->
+    <div style="background:#1e293b;border:1px solid #334155;border-radius:16px;padding:24px;">
+      <h2 style="font-size:18px;font-weight:800;color:#fff;margin-bottom:16px;">Quản lý kho sản phẩm Gunpla</h2>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13.5px;">
+          <thead>
+            <tr style="background:#0f172a;text-align:left;color:#93c5fd;">
+              <th style="padding:12px;">Ảnh</th>
+              <th style="padding:12px;">Tên mô hình</th>
+              <th style="padding:12px;">SKU</th>
+              <th style="padding:12px;">Grade</th>
+              <th style="padding:12px;">Giá bán</th>
+              <th style="padding:12px;">Tồn kho</th>
+              <th style="padding:12px;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="admin-products-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- SCRIPT MODULES TÁCH RỜI -->
+  <script type="module" src="js/api.js"></script>
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>

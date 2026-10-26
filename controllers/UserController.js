@@ -1,9 +1,19 @@
+// ====================================================================================
+// [NGHIỆP VỤ XÁC THỰC & NGƯỜI DÙNG] - UserController.js
+// Quản lý: Đăng ký (Mã hóa Bcrypt) -> Đăng nhập (Cấp JWT Access / Refresh Token) 
+// -> Phân quyền vai trò (User/Staff/Admin) -> Khóa / Mở khóa tài khoản
+// ====================================================================================
+
 const userModel = require('../models/user');
 const billModel = require('../models/bill');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Helper lấy ID người dùng đang đăng nhập từ Cookie, Header x-user-id hoặc Bearer Token JWT
+/**
+ * [NGHIỆP VỤ XÁC THỰC] - Helper lấy ID người dùng từ Cookie, Header x-user-id hoặc Bearer Token JWT
+ * @param {Request} req 
+ * @returns {string|null} userId nếu đã xác thực
+ */
 function getAuthUserId(req) {
     if (req.cookies?.userId) return req.cookies.userId;
     if (req.headers['x-user-id']) return req.headers['x-user-id'];
@@ -18,7 +28,11 @@ function getAuthUserId(req) {
 }
 
 const UserController = {
-    // 1. Lấy danh sách tất cả người dùng (không trả mật khẩu)
+    /**
+     * [NGHIỆP VỤ NGƯỜI DÙNG] - 1. Lấy danh sách tất cả người dùng (ẩn mật khẩu)
+     * Kèm theo thống kê số đơn hàng đã đặt và tổng chi tiêu tích lũy
+     * Endpoint: GET /users hoặc GET /api/users
+     */
     getAll: async (req, res) => {
         try {
             const rawUsers = await userModel.find().sort({ createdAt: -1 });
@@ -50,7 +64,10 @@ const UserController = {
         }
     },
 
-    // 2. Lấy chi tiết người dùng theo ID
+    /**
+     * [NGHIỆP VỤ NGƯỜI DÙNG] - 2. Lấy thông tin chi tiết một người dùng theo ID
+     * Endpoint: GET /users/:id hoặc GET /api/users/:id
+     */
     getById: async (req, res) => {
         try {
             const u = await userModel.findById(req.params.id).select('-password');
@@ -85,7 +102,10 @@ const UserController = {
         }
     },
 
-    // 3. Lấy thông tin tài khoản hiện tại đang đăng nhập
+    /**
+     * [NGHIỆP VỤ XÁC THỰC] - 3. Lấy thông tin tài khoản hiện tại đang đăng nhập
+     * Endpoint: GET /users/me hoặc GET /api/users/me
+     */
     getMe: async (req, res) => {
         try {
             const userId = getAuthUserId(req);
@@ -115,7 +135,10 @@ const UserController = {
         }
     },
 
-    // 4. Cập nhật thông tin tài khoản cá nhân đang đăng nhập
+    /**
+     * [NGHIỆP VỤ NGƯỜI DÙNG] - 4. Cập nhật hồ sơ cá nhân (Họ tên, SĐT, Địa chỉ)
+     * Endpoint: PUT /users/me hoặc PUT /api/users/me
+     */
     updateMe: async (req, res) => {
         try {
             const userId = getAuthUserId(req);
@@ -140,7 +163,15 @@ const UserController = {
         }
     },
 
-    // 5. Đăng ký tài khoản mới (Tạo người dùng với Bcrypt Hash)
+    /**
+     * [NGHIỆP VỤ ĐĂNG KÝ TÀI KHOẢN] - 5. Đăng ký tài khoản mới (Mã hóa Bcrypt Hash)
+     * Endpoint: POST /auth/register hoặc POST /api/auth/register hoặc POST /users/register
+     * Nghiệp vụ:
+     *  - Kiểm tra email hợp lệ, kiểm tra trùng lặp email
+     *  - Kiểm tra mật khẩu khớp với confirm_password
+     *  - Mã hóa mật khẩu an toàn với bcrypt salt 10 rounds
+     *  - Tạo document trong MongoDB với role mặc định là 'user'
+     */
     create: async (req, res) => {
         try {
             const { name, email, password, confirm_password, phone, address, role } = req.body;
@@ -155,10 +186,11 @@ const UserController = {
                 return res.status(400).json({ status: 0, message: 'Email này đã được sử dụng. Vui lòng đăng nhập hoặc dùng email khác.' });
             }
 
-            // Mã hóa mật khẩu bằng bcrypt theo đúng chuẩn bài giảng Google Doc
+            // BƯỚC 1: MÃ HÓA MẬT KHẨU BẰNG BCRYPT
             const salt = bcrypt.genSaltSync(10);
             const hashedPassword = bcrypt.hashSync(password, salt);
 
+            // BƯỚC 2: LƯU TÀI KHOẢN MỚI VÀO MONGODB
             const newUser = await userModel.create({
                 name: name || 'Thành viên Gunpla',
                 email: email.trim().toLowerCase(),
@@ -186,7 +218,17 @@ const UserController = {
         }
     },
 
-    // 6. Đăng nhập hệ thống (Bcrypt Compare + Cấp JWT Access Token & Refresh Token)
+    /**
+     * [NGHIỆP VỤ ĐĂNG NHẬP & CẤP TOKEN JWT] - 6. Xác thực đăng nhập
+     * Endpoint: POST /auth/login hoặc POST /api/auth/login hoặc POST /users/login
+     * Nghiệp vụ:
+     *  - So sánh mật khẩu bằng `bcrypt.compareSync`
+     *  - Kiểm tra trạng thái tài khoản (nếu status === 'locked' -> Chặn đăng nhập)
+     *  - Cấp cặp Token JWT chuẩn bảo mật:
+     *      * access_token: Thời hạn 1 giờ (60 phút) dùng trong header Authorization: Bearer
+     *      * refresh_token: Thời hạn 90 ngày dùng để lấy access_token mới khi hết hạn
+     *  - Đặt Cookie `userId` phục vụ session giỏ hàng và duyệt web
+     */
     login: async (req, res) => {
         try {
             const { email, password } = req.body;
@@ -199,12 +241,13 @@ const UserController = {
                 return res.status(401).json({ status: 0, message: 'Email hoặc mật khẩu không chính xác' });
             }
 
-            // Kiểm tra mật khẩu (hỗ trợ cả mật khẩu đã băm bcrypt và mật khẩu cũ)
+            // SO SÁNH MẬT KHẨU BĂM BCRYPT
             const isPasswordMatch = (user.password && user.password.startsWith('$2') && bcrypt.compareSync(password, user.password)) || (user.password === password);
             if (!isPasswordMatch) {
                 return res.status(401).json({ status: 0, message: 'Email hoặc mật khẩu không chính xác' });
             }
 
+            // KIỂM TRA TÀI KHOẢN CÓ ĐANG BỊ KHÓA HAY KHÔNG
             if (user.status === 'locked') {
                 return res.status(403).json({ status: 0, message: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.' });
             }
@@ -220,7 +263,7 @@ const UserController = {
                 address: user.address || ''
             };
 
-            // Tạo access_token và refresh_token theo đúng chuẩn bài giảng Google Doc
+            // TẠO CẶP TOKEN JWT (ACCESS_TOKEN & REFRESH_TOKEN)
             const access_token = jwt.sign({ user: safeUser }, process.env.JWT_SECRET || 'shhhhh', { expiresIn: 60 * 60 });
             const refresh_token = jwt.sign({ user: safeUser }, process.env.JWT_SECRET || 'shhhhh', { expiresIn: 90 * 24 * 60 * 60 });
 
@@ -245,7 +288,10 @@ const UserController = {
         }
     },
 
-    // Cấp lại access_token bằng refresh_token theo đúng chuẩn Google Doc
+    /**
+     * [NGHIỆP VỤ REFRESH TOKEN JWT] - Cấp access_token mới khi token cũ hết hạn
+     * Endpoint: POST /auth/refresh-token hoặc POST /api/auth/refresh-token
+     */
     refreshToken: async (req, res) => {
         try {
             const { refresh_token } = req.body;
@@ -261,7 +307,10 @@ const UserController = {
         }
     },
 
-    // 7. Đăng xuất
+    /**
+     * [NGHIỆP VỤ ĐĂNG XUẤT] - 7. Xóa cookie đăng nhập
+     * Endpoint: POST /auth/logout hoặc POST /api/auth/logout
+     */
     logout: async (req, res) => {
         try {
             res.clearCookie('userId');
@@ -271,7 +320,10 @@ const UserController = {
         }
     },
 
-    // 8. Cập nhật thông tin người dùng theo ID (cho admin)
+    /**
+     * [NGHIỆP VỤ QUẢN TRỊ NGƯỜI DÙNG] - 8. Cập nhật thông tin người dùng theo ID (Dành cho Admin)
+     * Endpoint: PUT /users/:id hoặc PUT /api/users/:id
+     */
     update: async (req, res) => {
         try {
             const updated = await userModel.findByIdAndUpdate(req.params.id, req.body, { new: true }).select('-password');
@@ -282,7 +334,13 @@ const UserController = {
         }
     },
 
-    // 9. Khóa / Mở khóa tài khoản
+    /**
+     * [NGHIỆP VỤ KHÓA TÀI KHOẢN] - 9. Khóa / Mở khóa tài khoản (Active <-> Locked)
+     * Endpoint: POST /users/:id/toggle-status hoặc POST /api/users/:id/toggle-status
+     * Ràng buộc nghiệp vụ:
+     *  - Admin không thể tự khóa tài khoản của chính mình
+     *  - Không thể khóa Quản trị viên (Admin) duy nhất còn lại của hệ thống
+     */
     toggleStatus: async (req, res) => {
         try {
             const targetId = req.params.id;
@@ -321,7 +379,12 @@ const UserController = {
         }
     },
 
-    // 10. Thay đổi vai trò người dùng (user, staff, admin)
+    /**
+     * [NGHIỆP VỤ PHÂN QUYỀN VAI TRÒ] - 10. Thay đổi vai trò người dùng (user, staff, admin)
+     * Endpoint: POST /users/:id/change-role hoặc POST /api/users/:id/change-role
+     * Ràng buộc nghiệp vụ:
+     *  - Không thể hạ quyền tài khoản Admin cuối cùng của hệ thống
+     */
     changeRole: async (req, res) => {
         try {
             const targetId = req.params.id;
@@ -359,7 +422,14 @@ const UserController = {
         }
     },
 
-    // 11. Xóa người dùng
+    /**
+     * [NGHIỆP VỤ XÓA TÀI KHOẢN AN TOÀN] - 11. Xóa người dùng
+     * Endpoint: DELETE /users/:id hoặc DELETE /api/users/:id
+     * Ràng buộc nghiệp vụ:
+     *  - Không thể tự xóa tài khoản của chính mình
+     *  - Không thể xóa Admin duy nhất còn lại
+     *  - Nếu tài khoản đã từng mua hàng (phát sinh hóa đơn) -> Chuyển sang trạng thái "Khóa" để bảo toàn lịch sử bán hàng
+     */
     remove: async (req, res) => {
         try {
             const targetId = req.params.id;

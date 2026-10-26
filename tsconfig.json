@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "noEmit": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "checkJs": false
+  },
+  "exclude": [
+    "node_modules",
+    "config/database.ts",
+    "middleware/*.ts",
+    "scripts/*.ts",
+    "services",
+    "tests",
+    "utils/*.ts",
+    "public/ts"
+  ]
+}

@@ -1,7 +1,17 @@
+// ====================================================================================
+// [NGHIỆP VỤ SẢN PHẨM & TỒN KHO] - ProductController.js
+// Quản lý thông tin sản phẩm, phân loại, kiểm tra SKU trùng, cập nhật số lượng tồn kho
+// và nghiệp vụ xóa an toàn (Lưu trữ nếu đã có lịch sử đơn hàng phát sinh)
+// ====================================================================================
+
 const productModel = require('../models/product');
 const billDetailModel = require('../models/billdetail');
 
-// Hàm chuẩn hóa dữ liệu sản phẩm phục vụ hiển thị
+/**
+ * [NGHIỆP VỤ SẢN PHẨM] - Hàm chuẩn hóa định dạng dữ liệu sản phẩm phục vụ hiển thị
+ * @param {Object} p - Document sản phẩm từ MongoDB
+ * @returns {Object} Đối tượng sản phẩm chuẩn hóa
+ */
 function mapProduct(p) {
     if (!p) return null;
     let brandName = 'Bandai Spirits';
@@ -40,7 +50,10 @@ function mapProduct(p) {
 }
 
 const ProductController = {
-    // 1. Lấy danh sách tất cả sản phẩm
+    /**
+     * [NGHIỆP VỤ SẢN PHẨM] - 1. Lấy danh sách tất cả sản phẩm
+     * Endpoint: GET /products hoặc GET /api/products
+     */
     getAll: async (req, res) => {
         try {
             const rawProducts = await productModel.find().populate('category').sort({ createdAt: -1 });
@@ -51,7 +64,10 @@ const ProductController = {
         }
     },
 
-    // 2. Lấy chi tiết sản phẩm theo ID (hỗ trợ cả params :id và query ?id=)
+    /**
+     * [NGHIỆP VỤ SẢN PHẨM] - 2. Lấy thông tin chi tiết một sản phẩm theo ID
+     * Endpoint: GET /products/:id hoặc GET /api/products/:id
+     */
     getById: async (req, res) => {
         try {
             const id = req.params.id || req.query.id;
@@ -65,7 +81,10 @@ const ProductController = {
         }
     },
 
-    // 3. Lấy danh sách sản phẩm theo danh mục (category)
+    /**
+     * [NGHIỆP VỤ SẢN PHẨM] - 3. Lấy danh sách sản phẩm theo danh mục (Category)
+     * Endpoint: GET /products/category/:categoryId hoặc GET /api/products/category/:categoryId
+     */
     getByCategory: async (req, res) => {
         try {
             const categoryId = req.params.categoryId || req.params.id || req.query.categoryId;
@@ -78,7 +97,15 @@ const ProductController = {
         }
     },
 
-    // 4. Thêm mới sản phẩm
+    /**
+     * [NGHIỆP VỤ SẢN PHẨM & TỒN KHO] - 4. Thêm sản phẩm mới (Admin)
+     * Endpoint: POST /products hoặc POST /api/products
+     * Ràng buộc nghiệp vụ:
+     *  - Kiểm tra tên không rỗng
+     *  - Kiểm tra giá tiền không âm (price >= 0)
+     *  - Kiểm tra số lượng tồn kho (stock/quantity >= 0)
+     *  - Kiểm tra mã SKU không được trùng lặp trong hệ thống
+     */
     create: async (req, res) => {
         try {
             const { name, sku, price, quantity, stock, image, category, categoryId, grade, scale, description, status, lowStockThreshold } = req.body;
@@ -102,7 +129,7 @@ const ProductController = {
                 return res.status(400).json({ status: 0, message: 'Vui lòng chọn danh mục cho sản phẩm.' });
             }
 
-            // Kiểm tra SKU không trùng
+            // [KIỂM TRA TRÙNG MÃ SKU]: SKU là định danh duy nhất của sản phẩm trong kho
             let finalSku = (sku || '').trim().toUpperCase();
             if (!finalSku) {
                 const prefix = grade ? grade.toUpperCase() : 'KIT';
@@ -135,7 +162,10 @@ const ProductController = {
         }
     },
 
-    // 5. Cập nhật sản phẩm
+    /**
+     * [NGHIỆP VỤ SẢN PHẨM & TỒN KHO] - 5. Chỉnh sửa thông tin sản phẩm & cập nhật kho
+     * Endpoint: PUT /products/:id hoặc PUT /api/products/:id
+     */
     update: async (req, res) => {
         try {
             const id = req.params.id;
@@ -154,12 +184,14 @@ const ProductController = {
                 item.price = pNum;
             }
 
+            // Cập nhật số lượng tồn kho
             if (stock !== undefined || quantity !== undefined) {
                 const qNum = Number(stock !== undefined ? stock : quantity);
                 if (isNaN(qNum) || qNum < 0 || !Number.isInteger(qNum)) return res.status(400).json({ status: 0, message: 'Số lượng tồn kho phải là số nguyên không âm.' });
                 item.quantity = qNum;
             }
 
+            // Kiểm tra SKU không trùng với sản phẩm khác
             if (sku) {
                 const trimmedSku = sku.trim().toUpperCase();
                 const existingSku = await productModel.findOne({ sku: trimmedSku, _id: { $ne: id } });
@@ -183,7 +215,16 @@ const ProductController = {
         }
     },
 
-    // 6. Xóa / Lưu trữ sản phẩm
+    /**
+     * [NGHIỆP VỤ XÓA AN TOÀN SẢN PHẨM] - 6. Xóa hoặc Lưu trữ sản phẩm
+     * Endpoint: DELETE /products/:id hoặc DELETE /api/products/:id
+     * Quy tắc nghiệp vụ bảo toàn dữ liệu:
+     *  - Nếu sản phẩm ĐÃ TỪNG có khách mua trong bảng hóa đơn chi tiết (billDetailModel):
+     *    -> KHÔNG XÓA CỨNG (Hard delete) để tránh hỏng dữ liệu báo cáo doanh thu & hóa đơn cũ.
+     *    -> Chuyển trạng thái sang `archived` (Lưu trữ / Ngừng kinh doanh).
+     *  - Nếu sản phẩm CHƯA TỪNG phát sinh đơn hàng:
+     *    -> Xóa vĩnh viễn khỏi CSDL MongoDB.
+     */
     remove: async (req, res) => {
         try {
             const id = req.params.id;
@@ -192,6 +233,7 @@ const ProductController = {
 
             const orderCount = await billDetailModel.countDocuments({ product: id });
             if (orderCount > 0) {
+                // Đã có lịch sử mua hàng -> Chuyển sang Lưu trữ / Ngừng bán
                 p.status = 'archived';
                 await p.save();
                 return res.status(200).json({
@@ -201,6 +243,7 @@ const ProductController = {
                 });
             }
 
+            // Chưa có đơn hàng nào mua món này -> Cho phép xóa hoàn toàn
             const deleted = await productModel.findByIdAndDelete(id);
             return res.status(200).json({ status: 1, message: `Đã xóa sản phẩm "${p.name}" thành công!`, deleted });
         } catch (err) {
@@ -208,7 +251,10 @@ const ProductController = {
         }
     },
 
-    // 7. Bật / Tắt trạng thái kinh doanh
+    /**
+     * [NGHIỆP VỤ SẢN PHẨM] - 7. Bật / Tắt trạng thái kinh doanh (Active <-> Inactive)
+     * Endpoint: POST /products/:id/toggle-status hoặc POST /api/products/:id/toggle-status
+     */
     toggleStatus: async (req, res) => {
         try {
             const p = await productModel.findById(req.params.id).populate('category');
