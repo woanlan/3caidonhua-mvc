@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo Giao Diện Quản Trị Admin - 3caidonhua Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    /* CSS Reset & Core Variables */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    :root {
+      --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      
+      /* Theme 1: Dark Mecha Luxury (Default) */
+      --bg-app: #090d15;
+      --bg-sidebar: #0f1420;
+      --bg-card: rgba(18, 24, 38, 0.95);
+      --bg-card-hover: rgba(26, 35, 54, 0.95);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(230, 0, 18, 0.3);
+      --text-main: #f1f5f9;
+      --text-muted: #8e98a5;
+      --text-dim: #556070;
+      --primary: #e60012;
+      --primary-hover: #ff1a2b;
+      --primary-glow: rgba(230, 0, 18, 0.25);
+      --accent-green: #10b981;
+      --accent-blue: #38bdf8;
+      --accent-amber: #f59e0b;
+      --accent-purple: #a855f7;
+      --card-radius: 14px;
+      --topbar-bg: rgba(15, 20, 32, 0.9);
+    }
+
+    /* Theme 2: Modern Clean SaaS */
+    body.theme-saas {
+      --bg-app: #f8fafc;
+      --bg-sidebar: #0f172a;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f1f5f9;
+      --border: #e2e8f0;
+      --border-accent: rgba(59, 130, 246, 0.3);
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-glow: rgba(37, 99, 235, 0.2);
+      --card-radius: 12px;
+      --topbar-bg: #ffffff;
+    }
+
+    /* Theme 3: High-Speed Merchant Center */
+    body.theme-merchant {
+      --bg-app: #0b111e;
+      --bg-sidebar: #070b14;
+      --bg-card: #111a2d;
+      --bg-card-hover: #16223b;
+      --border: #1e293b;
+      --border-accent: rgba(249, 115, 22, 0.3);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --primary: #f97316;
+      --primary-hover: #ea580c;
+      --primary-glow: rgba(249, 115, 22, 0.25);
+      --card-radius: 8px;
+      --topbar-bg: #070b14;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.25s, color 0.25s;
+    }
+
+    /* Top Demo Switcher Toolbar */
+    .demo-bar {
+      background: #000000;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .demo-bar-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .demo-bar-badge {
+      background: var(--primary);
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      letter-spacing: 0.5px;
+    }
+    .theme-switcher {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #111;
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .theme-btn {
+      background: transparent;
+      border: none;
+      color: #888;
+      padding: 6px 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .theme-btn.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 2px 8px var(--primary-glow);
+    }
+    .theme-btn:hover:not(.active) {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Main App Layout */
+    .admin-layout {
+      display: flex;
+      flex: 1;
+      min-height: calc(100vh - 54px);
+    }
+
+    /* Sidebar */
+    .admin-sidebar {
+      width: 260px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: all 0.25s;
+    }
+    .sidebar-brand {
+      padding: 22px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand-logo-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, var(--primary), #b91c1c);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 18px;
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+    .brand-text h1 {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .brand-text span {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-family: var(--font-mono);
+    }
+
+    .sidebar-nav {
+      padding: 16px 12px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .nav-category {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 12px 10px 6px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .nav-item svg {
+      width: 19px;
+      height: 19px;
+      stroke-width: 2;
+      flex-shrink: 0;
+    }
+    .nav-item:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .nav-item.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+    .nav-item .badge {
+      margin-left: auto;
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-family: var(--font-mono);
+    }
+    .nav-item.active .badge {
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .sidebar-user {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #1e293b;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--primary);
+    }
+    .user-info {
+      flex: 1;
+      overflow: hidden;
+    }
+    .user-name {
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      color: var(--text-main);
+    }
+    .user-role {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Main Content Area */
+    .admin-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Topbar */
+    .admin-topbar {
+      height: 64px;
+      background: var(--topbar-bg);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      position: sticky;
+      top: 54px;
+      z-index: 50;
+    }
+    .topbar-search {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: 8px;
+      width: 340px;
+      transition: all 0.2s;
+    }
+    body.theme-saas .topbar-search {
+      background: #f1f5f9;
+    }
+    .topbar-search:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+    .topbar-search input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-main);
+      font-size: 13px;
+      width: 100%;
+    }
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .action-btn-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+    }
+    .action-btn-icon:hover {
+      color: var(--text-main);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .dot-badge {
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      width: 8px;
+      height: 8px;
+      background: var(--primary);
+      border-radius: 50%;
+    }
+    .btn-view-store {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-view-store:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--primary);
+    }
+
+    /* Page Container */
+    .admin-page {
+      padding: 26px 28px;
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      gap: 22px;
+    }
+    .admin-page.active {
+      display: flex;
+    }
+
+    /* Page Header */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+    .page-title h2 {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.3px;
+    }
+    .page-title p {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+    .page-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px var(--primary-glow);
+      transition: all 0.2s;
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 9px 15px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    body.theme-saas .btn-secondary {
+      background: #ffffff;
+    }
+    .btn-secondary:hover {
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* TO-DO ACTION CENTER */
+    .todo-center {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--card-radius);
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .todo-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .todo-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #f59e0b;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+      animation: pulseAlert 1.8s infinite;
+    }
+    @keyframes pulseAlert {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.6; }
+    }
+    .todo-items-grid {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .todo-badge-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .todo-badge-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--primary);
+    }
+    .todo-badge-btn strong {
+      background: var(--primary);
+      color: #fff;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-family: var(--font-mono);
+    }
+
+    /* KPI STATS CARDS */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+    @media (max-width: 1100px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+    }
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--card-radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: transform 0.2s, border-color 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+    .kpi-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .kpi-label {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .kpi-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+    }
+    .kpi-val {
+      font-size: 26px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      letter-spacing: -0.5px;
+      color: var(--text-main);
+    }
+    .kpi-bottom {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+    }
+    .trend-up {
+      color: #10b981;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .trend-desc {
+      color: var(--text-dim);
+    }
+
+    /* 2-COLUMN DASHBOARD GRID */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 992px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Content Cards */
+    .content-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--card-radius);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .content-card-header {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .content-card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .content-card-body {
+      padding: 20px 22px;
+      flex: 1;
+    }
+
+    /* Interactive Data Table */
+    .table-container {
+      overflow-x: auto;
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13.5px;
+    }
+    .data-table th {
+      background: rgba(255, 255, 255, 0.02);
+      padding: 12px 16px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      border-bottom: 1px solid var(--border);
+    }
+    body.theme-saas .data-table th {
+      background: #f8fafc;
+    }
+    .data-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+    .data-table tr:hover td {
+      background: var(--bg-card-hover);
+    }
+
+    /* Status Pills */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .pill-pending { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .pill-confirmed { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .pill-shipping { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .pill-completed { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .pill-cancelled { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    /* Filter Toolbar */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .filter-tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .filter-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-tab.active {
+      background: var(--bg-card);
+      color: var(--text-main);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+
+    /* Product Row Elements */
+    .prod-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: #1e293b;
+      border: 1px solid var(--border);
+    }
+    .stock-meter {
+      width: 90px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .stock-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+    .stock-high { background: #10b981; }
+    .stock-mid { background: #f59e0b; }
+    .stock-low { background: #ef4444; }
+
+    /* Comparison Callout Modal */
+    .comp-banner {
+      background: linear-gradient(90deg, rgba(230,0,18,0.1), rgba(16,185,129,0.05));
+      border: 1px solid var(--border-accent);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+    .comp-text h4 {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .comp-text p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+  </style>
+</head>
+<body class="theme-dark">
+
+  <!-- TOP TOOLBAR: SWITCH BETWEEN 3 PROPOSED STYLES -->
+  <header class="demo-bar">
+    <div class="demo-bar-title">
+      <span class="demo-bar-badge">DEMO QUẢN TRỊ 2026</span>
+      <span>Chọn xem trước 3 phong cách giao diện Admin đề xuất:</span>
+    </div>
+    <div class="theme-switcher">
+      <button class="theme-btn active" onclick="setDemoTheme('theme-dark', this)">
+        <span>✨ Option 1: Dark Mecha Luxury (Khuyên dùng)</span>
+      </button>
+      <button class="theme-btn" onclick="setDemoTheme('theme-saas', this)">
+        <span>💼 Option 2: Modern Clean SaaS (Shopify/Stripe)</span>
+      </button>
+      <button class="theme-btn" onclick="setDemoTheme('theme-merchant', this)">
+        <span>⚡ Option 3: High-Speed Merchant (Shopee Pro)</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="admin-layout">
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-logo-mark">3C</div>
+        <div class="brand-text">
+          <h1>3CAIDONHUA</h1>
+          <span>STUDIO ADMIN CENTER</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-category">Trung tâm điều hành</div>
+        <a class="nav-item active" onclick="switchTab('dashboard', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          <span>Tổng quan</span>
+        </a>
+        <a class="nav-item" onclick="switchTab('orders', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-2z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <span>Đơn hàng</span>
+          <span class="badge" style="background:var(--primary);">4 mới</span>
+        </a>
+
+        <div class="nav-category">Quản lý kho hàng</div>
+        <a class="nav-item" onclick="switchTab('products', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m21.12 6.4-9-5a2 2 0 0 0-2 0l-9 5A2 2 0 0 0 0 8.1v7.8a2 2 0 0 0 1.12 1.7l9 5a2 2 0 0 0 2 0l9-5a2 2 0 0 0 1.12-1.7V8.1a2 2 0 0 0-1.12-1.7z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+          <span>Kho mô hình &amp; SKU</span>
+          <span class="badge">1.500+</span>
+        </a>
+        <a class="nav-item" onclick="switchTab('categories', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          <span>Danh mục &amp; Phân cấp</span>
+        </a>
+
+        <div class="nav-category">Khách hàng &amp; Tài chính</div>
+        <a class="nav-item" onclick="switchTab('customers', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Khách hàng</span>
+        </a>
+        <a class="nav-item" onclick="switchTab('analytics', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span>Báo cáo doanh số</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-user">
+        <div class="user-avatar">L</div>
+        <div class="user-info">
+          <div class="user-name">Nguyễn Hoàng Lân</div>
+          <div class="user-role">Quản trị viên Studio</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN BODY -->
+    <main class="admin-main">
+      <!-- TOPBAR -->
+      <div class="admin-topbar">
+        <div class="topbar-search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="Tìm kiếm nhanh đơn hàng, mã SKU, khách hàng (Ctrl+K)...">
+        </div>
+
+        <div class="topbar-actions">
+          <a href="/#catalog" target="_blank" class="btn-view-store">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            <span>Xem cửa hàng</span>
+          </a>
+          <button class="action-btn-icon" title="Thông báo đơn mới">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="dot-badge"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- PAGE: DASHBOARD -->
+      <div id="page-dashboard" class="admin-page active">
+        <!-- Banner so sánh & Giải thích -->
+        <div class="comp-banner">
+          <div class="comp-text">
+            <h4>💡 Logic chuẩn cho Trang Tổng Quan Quản Trị Bán Hàng:</h4>
+            <p>Tập trung vào 3 yếu tố cốt lõi: <strong>1. Việc cần làm ngay</strong> ➔ <strong>2. Chỉ số KPI thời gian thực</strong> ➔ <strong>3. Đơn hàng cần đóng gói &amp; Tồn kho cấp bách</strong>.</p>
+          </div>
+          <button class="btn-primary" onclick="alert('Đây là bản demo tương tác. Khi bạn chốt giao diện, chúng tôi sẽ cập nhật vào hệ thống thật!')">
+            Áp dụng giao diện này ✓
+          </button>
+        </div>
+
+        <!-- TO-DO CENTER: VIỆC CẦN LÀM NGAY -->
+        <div class="todo-center">
+          <div class="todo-header">
+            <div class="todo-indicator"></div>
+            <div>
+              <div style="font-size:14.5px;font-weight:700;">TRUNG TÂM TÁC VỤ CẦN XỬ LÝ HÔM NAY</div>
+              <div style="font-size:12.5px;color:var(--text-muted);">Ưu tiên xử lý đơn và kho để tối ưu giao hàng</div>
+            </div>
+          </div>
+          <div class="todo-items-grid">
+            <button class="todo-badge-btn" onclick="switchTab('orders', document.querySelectorAll('.nav-item')[1])">
+              <span>Đơn chờ xác nhận:</span>
+              <strong>4 đơn</strong>
+            </button>
+            <button class="todo-badge-btn" onclick="switchTab('orders', document.querySelectorAll('.nav-item')[1])">
+              <span>Cần đóng gói gửi GHN:</span>
+              <strong style="background:#2563eb;">3 đơn</strong>
+            </button>
+            <button class="todo-badge-btn" onclick="switchTab('products', document.querySelectorAll('.nav-item')[2])">
+              <span>Mô hình sắp hết hàng (&le;5):</span>
+              <strong style="background:#f59e0b;">2 cái</strong>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 KPI STATS CARDS -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Doanh thu tháng này</span>
+              <div class="kpi-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+            </div>
+            <div class="kpi-val">128.450.000 ₫</div>
+            <div class="kpi-bottom">
+              <span class="trend-up">↑ +18.4%</span>
+              <span class="trend-desc">so với tháng trước</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Tổng đơn đặt hàng</span>
+              <div class="kpi-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-2z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              </div>
+            </div>
+            <div class="kpi-val">94 đơn</div>
+            <div class="kpi-bottom">
+              <span class="trend-up">↑ +12 đơn</span>
+              <span class="trend-desc">trong tuần này</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Giá trị trung bình/đơn</span>
+              <div class="kpi-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4"/><path d="M12 16V8"/></svg>
+              </div>
+            </div>
+            <div class="kpi-val">1.366.000 ₫</div>
+            <div class="kpi-bottom">
+              <span class="trend-up">↑ +5.2%</span>
+              <span class="trend-desc">tập trung dòng MG/PG</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Tồn kho Gunpla</span>
+              <div class="kpi-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              </div>
+            </div>
+            <div class="kpi-val">1.520 kit</div>
+            <div class="kpi-bottom">
+              <span style="color:#f59e0b;font-weight:700;">⚠ 2 mẫu hết hàng</span>
+              <span class="trend-desc">cần nhập thêm</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2-COL DETAILS -->
+        <div class="dashboard-grid">
+          <!-- RECENT ORDERS -->
+          <div class="content-card">
+            <div class="content-card-header">
+              <div class="content-card-title">Đơn hàng mới nhất cần xử lý</div>
+              <a href="javascript:void(0)" onclick="switchTab('orders', document.querySelectorAll('.nav-item')[1])" style="font-size:12.5px;color:var(--primary);text-decoration:none;font-weight:700;">Xem tất cả &rarr;</a>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Mã đơn</th>
+                    <th>Khách hàng</th>
+                    <th>Tổng tiền</th>
+                    <th>Hình thức</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong style="color:var(--primary);font-family:var(--font-mono);">HD18DCD4</strong></td>
+                    <td>
+                      <div style="font-weight:700;">Nguyễn Hoàng Lân</div>
+                      <div style="font-size:12px;color:var(--text-muted);">0907652267</div>
+                    </td>
+                    <td><strong style="font-family:var(--font-mono);">1.280.000 ₫</strong></td>
+                    <td><span style="font-size:12px;font-weight:600;">COD</span></td>
+                    <td><span class="status-pill pill-pending">Chờ xác nhận</span></td>
+                    <td>
+                      <button class="btn-primary" style="padding:4px 10px;font-size:12px;" onclick="alert('Đã xác nhận đơn HD18DCD4')">Duyệt nhanh</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong style="color:var(--primary);font-family:var(--font-mono);">HDBEE925</strong></td>
+                    <td>
+                      <div style="font-weight:700;">Trần Minh Tuấn</div>
+                      <div style="font-size:12px;color:var(--text-muted);">0912345678</div>
+                    </td>
+                    <td><strong style="font-family:var(--font-mono);">2.450.000 ₫</strong></td>
+                    <td><span style="font-size:12px;font-weight:600;">VietQR</span></td>
+                    <td><span class="status-pill pill-confirmed">Đã xác nhận</span></td>
+                    <td>
+                      <button class="btn-secondary" style="padding:4px 10px;font-size:12px;">Gửi bưu cục</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong style="color:var(--primary);font-family:var(--font-mono);">HD7A335D</strong></td>
+                    <td>
+                      <div style="font-weight:700;">Lê Thị Thảo</div>
+                      <div style="font-size:12px;color:var(--text-muted);">0988776655</div>
+                    </td>
+                    <td><strong style="font-family:var(--font-mono);">890.000 ₫</strong></td>
+                    <td><span style="font-size:12px;font-weight:600;">COD</span></td>
+                    <td><span class="status-pill pill-shipping">Đang giao hàng</span></td>
+                    <td>
+                      <button class="btn-secondary" style="padding:4px 10px;font-size:12px;">Theo dõi</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TOP SELLING GUNPLA -->
+          <div class="content-card">
+            <div class="content-card-header">
+              <div class="content-card-title">Top mô hình bán chạy</div>
+              <span style="font-size:12px;color:var(--text-muted);">Tuần này</span>
+            </div>
+            <div class="content-card-body" style="display:flex;flex-direction:column;gap:14px;padding:16px;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:42px;height:42px;background:#1e293b;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--primary);">1</div>
+                <div style="flex:1;">
+                  <div style="font-weight:700;font-size:13.5px;">MG 1/100 Barbatos</div>
+                  <div style="font-size:12px;color:var(--text-muted);">Đã bán: 28 kit &bull; Tồn: 14</div>
+                </div>
+                <strong style="color:var(--primary);font-family:var(--font-mono);font-size:13px;">1.150.000 ₫</strong>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:42px;height:42px;background:#1e293b;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--text-muted);">2</div>
+                <div style="flex:1;">
+                  <div style="font-weight:700;font-size:13.5px;">RG 1/144 Sazabi</div>
+                  <div style="font-size:12px;color:var(--text-muted);">Đã bán: 19 kit &bull; Tồn: 6</div>
+                </div>
+                <strong style="color:var(--primary);font-family:var(--font-mono);font-size:13px;">1.280.000 ₫</strong>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:42px;height:42px;background:#1e293b;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--text-muted);">3</div>
+                <div style="flex:1;">
+                  <div style="font-weight:700;font-size:13.5px;">HG 1/144 Calibarn</div>
+                  <div style="font-size:12px;color:var(--text-muted);">Đã bán: 15 kit &bull; Tồn: 24</div>
+                </div>
+                <strong style="color:var(--primary);font-family:var(--font-mono);font-size:13px;">520.000 ₫</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: ORDERS (QUẢN LÝ ĐƠN HÀNG) -->
+      <div id="page-orders" class="admin-page">
+        <div class="page-header">
+          <div class="page-title">
+            <h2>Quản lý &amp; Xử lý đơn hàng</h2>
+            <p>Kiểm tra, phê duyệt và điều phối giao hàng cho 94 đơn hàng</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn-secondary">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Xuất Excel</span>
+            </button>
+            <button class="btn-primary">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              <span>In hàng loạt đơn</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- FILTER TOOLBAR -->
+        <div class="filter-bar">
+          <div class="filter-tabs">
+            <button class="filter-tab active" onclick="setFilter(this)">Tất cả (94)</button>
+            <button class="filter-tab" onclick="setFilter(this)">Chờ xác nhận (4)</button>
+            <button class="filter-tab" onclick="setFilter(this)">Đang chuẩn bị (7)</button>
+            <button class="filter-tab" onclick="setFilter(this)">Đang giao hàng (18)</button>
+            <button class="filter-tab" onclick="setFilter(this)">Hoàn thành (62)</button>
+            <button class="filter-tab" onclick="setFilter(this)">Đã hủy (3)</button>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <select style="background:var(--bg-card);border:1px solid var(--border);color:var(--text-main);padding:6px 12px;border-radius:6px;font-size:12.5px;">
+              <option>Thanh toán: Tất cả</option>
+              <option>COD</option>
+              <option>VietQR</option>
+              <option>MoMo</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ORDERS TABLE -->
+        <div class="content-card">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width:30px;"><input type="checkbox"></th>
+                  <th>MÃ ĐƠN HÀNG</th>
+                  <th>NGÀY ĐẶT</th>
+                  <th>KHÁCH HÀNG &amp; SĐT</th>
+                  <th>ĐỊA CHỈ GIAO</th>
+                  <th>TỔNG TIỀN</th>
+                  <th>THANH TOÁN</th>
+                  <th>TRẠNG THÁI</th>
+                  <th style="text-align:right;">THAO TÁC</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td><strong style="color:var(--primary);font-family:var(--font-mono);">HD18DCD4</strong></td>
+                  <td style="font-size:12px;color:var(--text-muted);">18:07 - Hôm nay</td>
+                  <td>
+                    <div style="font-weight:700;">Nguyễn Hoàng Lân</div>
+                    <div style="font-size:12px;color:var(--text-muted);font-family:var(--font-mono);">0907652267</div>
+                  </td>
+                  <td style="font-size:12.5px;max-width:200px;">TP. Hồ Chí Minh, Quận 1</td>
+                  <td><strong style="font-family:var(--font-mono);color:var(--primary);">1.280.000 ₫</strong></td>
+                  <td><span style="font-size:12px;font-weight:600;">COD</span></td>
+                  <td><span class="status-pill pill-pending">Chờ xác nhận</span></td>
+                  <td style="text-align:right;">
+                    <button class="btn-primary" style="padding:5px 12px;font-size:12px;display:inline-flex;" onclick="alert('Duyệt đơn và chuyển sang khâu đóng gói!')">Xác nhận đơn</button>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td><strong style="color:var(--primary);font-family:var(--font-mono);">HDBEE925</strong></td>
+                  <td style="font-size:12px;color:var(--text-muted);">15:28 - Hôm qua</td>
+                  <td>
+                    <div style="font-weight:700;">Trần Minh Tuấn</div>
+                    <div style="font-size:12px;color:var(--text-muted);font-family:var(--font-mono);">0912345678</div>
+                  </td>
+                  <td style="font-size:12.5px;max-width:200px;">Hà Nội, Cầu Giấy</td>
+                  <td><strong style="font-family:var(--font-mono);color:var(--primary);">2.450.000 ₫</strong></td>
+                  <td><span style="font-size:12px;font-weight:600;color:#10b981;">VietQR (Đã thanh toán)</span></td>
+                  <td><span class="status-pill pill-confirmed">Đang chuẩn bị</span></td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:5px 12px;font-size:12px;display:inline-flex;">In phiếu gói hàng</button>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td><strong style="color:var(--primary);font-family:var(--font-mono);">HD7A335D</strong></td>
+                  <td style="font-size:12px;color:var(--text-muted);">10:14 - 05/10/2026</td>
+                  <td>
+                    <div style="font-weight:700;">Lê Thị Thảo</div>
+                    <div style="font-size:12px;color:var(--text-muted);font-family:var(--font-mono);">0988776655</div>
+                  </td>
+                  <td style="font-size:12.5px;max-width:200px;">Đà Nẵng, Hải Châu</td>
+                  <td><strong style="font-family:var(--font-mono);color:var(--primary);">890.000 ₫</strong></td>
+                  <td><span style="font-size:12px;font-weight:600;">COD</span></td>
+                  <td><span class="status-pill pill-shipping">Đang giao hàng</span></td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:5px 12px;font-size:12px;display:inline-flex;">Xem lộ trình</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: PRODUCTS (QUẢN LÝ SẢN PHẨM & TỒN KHO) -->
+      <div id="page-products" class="admin-page">
+        <div class="page-header">
+          <div class="page-title">
+            <h2>Quản lý kho mô hình &amp; SKU</h2>
+            <p>1.520 sản phẩm Gunpla Bandai chính hãng trong hệ thống</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn-secondary">Nhập dữ liệu Excel</button>
+            <button class="btn-primary">+ Thêm mô hình mới</button>
+          </div>
+        </div>
+
+        <div class="content-card">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width:50px;">ẢNH</th>
+                  <th>MÔ HÌNH GUNPLA</th>
+                  <th>MÃ SKU</th>
+                  <th>PHÂN CẤP</th>
+                  <th>GIÁ NIÊM YẾT</th>
+                  <th>TỒN KHO &amp; CẢNH BÁO</th>
+                  <th>TRẠNG THÁI</th>
+                  <th style="text-align:right;">THAO TÁC</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><div style="width:44px;height:44px;background:#1e293b;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:11px;">MG</div></td>
+                  <td>
+                    <div style="font-weight:700;">MG 1/100 Barbatos Gundam Expansion</div>
+                    <div style="font-size:12px;color:var(--text-muted);">Bandai Spirits Japan &bull; Tỉ lệ 1/100</div>
+                  </td>
+                  <td><code style="font-family:var(--font-mono);color:#38bdf8;">MG-BAR-01</code></td>
+                  <td><span style="background:rgba(230,0,18,0.15);color:#ff4d4f;padding:2px 8px;border-radius:4px;font-weight:700;font-size:11px;">MG 1/100</span></td>
+                  <td><strong style="font-family:var(--font-mono);color:var(--primary);">1.150.000 ₫</strong></td>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <strong style="font-family:var(--font-mono);">14</strong>
+                      <span style="font-size:11px;color:#10b981;">(Còn dồi dào)</span>
+                    </div>
+                    <div class="stock-meter"><div class="stock-fill stock-high" style="width:80%;"></div></div>
+                  </td>
+                  <td><span class="status-pill pill-completed">Đang bán</span></td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:4px 8px;font-size:12px;">Sửa</button>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td><div style="width:44px;height:44px;background:#1e293b;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:11px;">RG</div></td>
+                  <td>
+                    <div style="font-weight:700;">RG 1/144 MSN-04 Sazabi Bandai</div>
+                    <div style="font-size:12px;color:var(--text-muted);">Bandai Spirits Japan &bull; Tỉ lệ 1/144</div>
+                  </td>
+                  <td><code style="font-family:var(--font-mono);color:#38bdf8;">RG-SAZ-04</code></td>
+                  <td><span style="background:rgba(230,0,18,0.15);color:#ff4d4f;padding:2px 8px;border-radius:4px;font-weight:700;font-size:11px;">RG 1/144</span></td>
+                  <td><strong style="font-family:var(--font-mono);color:var(--primary);">1.280.000 ₫</strong></td>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <strong style="font-family:var(--font-mono);color:#f59e0b;">4</strong>
+                      <span style="font-size:11px;color:#f59e0b;">(Sắp hết)</span>
+                    </div>
+                    <div class="stock-meter"><div class="stock-fill stock-mid" style="width:25%;"></div></div>
+                  </td>
+                  <td><span class="status-pill pill-completed">Đang bán</span></td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:4px 8px;font-size:12px;">Sửa</button>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td><div style="width:44px;height:44px;background:#1e293b;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:11px;">PG</div></td>
+                  <td>
+                    <div style="font-weight:700;">PG Unleashed 1/60 RX-78-2 Gundam</div>
+                    <div style="font-size:12px;color:var(--text-muted);">Bandai Spirits Japan &bull; Tỉ lệ 1/60</div>
+                  </td>
+                  <td><code style="font-family:var(--font-mono);color:#38bdf8;">PG-RX78-UNL</code></td>
+                  <td><span style="background:rgba(168,85,247,0.15);color:#c084fc;padding:2px 8px;border-radius:4px;font-weight:700;font-size:11px;">PG 1/60</span></td>
+                  <td><strong style="font-family:var(--font-mono);color:var(--primary);">5.600.000 ₫</strong></td>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <strong style="font-family:var(--font-mono);color:#ef4444;">0</strong>
+                      <span style="font-size:11px;color:#ef4444;">(Hết hàng)</span>
+                    </div>
+                    <div class="stock-meter"><div class="stock-fill stock-low" style="width:0%;"></div></div>
+                  </td>
+                  <td><span class="status-pill pill-cancelled">Tạm hết</span></td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:4px 8px;font-size:12px;">Nhập kho</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: OTHERS PLACEHOLDER -->
+      <div id="page-categories" class="admin-page">
+        <div class="content-card" style="padding:40px;text-align:center;">
+          <h3>Quản lý danh mục &amp; Phân cấp Grade (RG, MG, PG, HG, Mega Size)</h3>
+          <p style="color:var(--text-muted);margin-top:8px;">Cho phép thêm, sửa danh mục và phân loại menu trang chủ nhanh chóng.</p>
+        </div>
+      </div>
+      <div id="page-customers" class="admin-page">
+        <div class="content-card" style="padding:40px;text-align:center;">
+          <h3>Quản lý danh sách Khách hàng &amp; Lịch sử tích lũy điểm</h3>
+          <p style="color:var(--text-muted);margin-top:8px;">Theo dõi số lượng đơn hàng, tổng chi tiêu trọn đời (LTV) và phân hạng thành viên VIP.</p>
+        </div>
+      </div>
+      <div id="page-analytics" class="admin-page">
+        <div class="content-card" style="padding:40px;text-align:center;">
+          <h3>Báo cáo Doanh số &amp; Tỷ lệ chuyển đổi Giỏ hàng</h3>
+          <p style="color:var(--text-muted);margin-top:8px;">Thống kê biểu đồ doanh thu theo ngày/tháng, sản phẩm bán chạy nhất và tỷ lệ huỷ hoàn.</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    // Tab Switcher
+    function switchTab(tabId, el) {
+      document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      const targetPage = document.getElementById('page-' + tabId);
+      if (targetPage) targetPage.classList.add('active');
+      if (el) el.classList.add('active');
+    }
+
+    // Filter toolbar demo
+    function setFilter(el) {
+      document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    // Live Theme Switcher for 3 styles
+    function setDemoTheme(themeClass, btn) {
+      document.body.className = themeClass;
+      document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+</html>

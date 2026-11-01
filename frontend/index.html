@@ -1,116 +1,369 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3caidonhua — Bandai Spirits & Gunpla Collector Studio</title>
-  <link rel="icon" type="image/png" href="assets/logo3cai.png">
-  <link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="theme-color" content="#090c10">
+    <meta name="description" content="3caidonhua — Không chỉ là mô hình. Đó là không gian triển lãm Bandai Spirits & Gunpla Studio của riêng bạn.">
+    <title>3caidonhua — Bandai Spirits & Gunpla Collector Studio</title>
+    <link rel="icon" type="image/png" href="/assets/logo3cai.png">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin-luxury.css">
+    <script src="/js/app.js" type="module"></script>
 </head>
-<body style="background:#090c10;color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
 
-  <!-- HEADER NAVBAR -->
-  <header style="background:rgba(15,23,42,0.95);border-bottom:1px solid #334155;position:sticky;top:0;z-index:999;backdrop-filter:blur(10px);padding:14px 24px;">
-    <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px;">
-      <a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
-        <img src="assets/logo3cai.png" alt="3caidonhua" style="height:38px;object-fit:contain;">
-        <span style="font-weight:900;color:#fff;font-size:18px;letter-spacing:1px;">3 CÂY ĐÒN HỨA</span>
-      </a>
-
-      <nav style="display:flex;align-items:center;gap:22px;font-size:14.5px;font-weight:600;">
-        <a href="index.html" style="color:#e60012;text-decoration:none;">Trang chủ</a>
-        <a href="products.html" style="color:#cbd5e1;text-decoration:none;">Bộ sưu tập</a>
-        <a href="orders.html" style="color:#cbd5e1;text-decoration:none;">Tra cứu đơn</a>
-        <a href="cart.html" style="color:#cbd5e1;text-decoration:none;position:relative;">
-          🛒 Giỏ hàng
-          <span id="cart-badge" style="display:none;position:absolute;top:-8px;right:-14px;background:#e60012;color:#fff;font-size:11px;font-weight:800;padding:1px 6px;border-radius:10px;">0</span>
+<body>
+    <a class="skip" href="#catalog">Đến sản phẩm</a>
+    <header class="header" id="header">
+        <a class="brand" href="#home" aria-label="3caidonhua trang chủ">
+            <img src="/assets/logo3cai.png" alt="3caidonhua" class="brand-logo-img">
         </a>
-      </nav>
+        <nav class="desktop-nav" aria-label="Điều hướng chính">
+            <a href="#home" class="active">Trang chủ</a>
+            <div class="nav-dropdown-item">
+                <a href="#catalog" class="nav-dropdown-trigger">Bộ sưu tập <span class="nav-caret">▾</span></a>
+                <div class="mega-menu">
+                    <div class="mega-column">
+                        <h4>Mô Hình Gundam</h4>
+                        <a href="#catalog" data-filter-link="all">Tất cả mô hình Gundam</a>
+                        <a href="#catalog" data-filter-link="SD">SD Gundam (Super Deformed)</a>
+                        <a href="#catalog" data-filter-link="HG">HG Gundam (High Grade 1/144)</a>
+                        <a href="#catalog" data-filter-link="RG">RG 1/144 Gundam (Real Grade)</a>
+                        <a href="#catalog" data-filter-link="IBO">IBO Gundam (1/100)</a>
+                        <a href="#catalog" data-filter-link="RE">RE 1/100 Gundam</a>
+                        <a href="#catalog" data-filter-link="MG">MG 1/100 Gundam (Master Grade)</a>
+                        <a href="#catalog" data-filter-link="MGEX">MGEX Gundam (Master Grade Ver.ka)</a>
+                        <a href="#catalog" data-filter-link="PG">PG Gundam (Perfect Grade 1/60)</a>
+                        <a href="#catalog" data-filter-link="Mega Size">Mega Size Gundam (1/48)</a>
+                        <div class="mega-divider"></div>
+                        <a href="#catalog" data-brand-filter="Bandai">Gundam Bandai Chính Hãng</a>
+                        <a href="#catalog" data-brand-filter="Daban">Gundam Daban</a>
+                        <a href="#catalog" data-brand-filter="Jijia">Gundam Jijia</a>
+                    </div>
+                    <div class="mega-column">
+                        <h4>Bút Kẻ (tô, bút lông, cọ)</h4>
+                        <a href="#catalog" data-filter-link="TOOLS">Tất cả bút &amp; phụ kiện</a>
+                        <a href="#catalog" data-search-filter="GM01">Bút kẻ lằn chìm (Gundam Marker)</a>
+                        <a href="#catalog" data-search-filter="Metallic">Bút tô kim loại (Metallic Marker)</a>
+                        <a href="#catalog" data-search-filter="Kìm cắt">Kìm cắt mô hình Bandai</a>
+                        <a href="#catalog" data-search-filter="Cọ vẽ">Cọ vẽ &amp; dụng cụ chuyên dụng</a>
+                    </div>
+                    <div class="mega-column">
+                        <h4>Mô Hình One Piece</h4>
+                        <a href="#catalog" data-filter-link="ONEPIECE">Tất cả One Piece</a>
+                        <a href="#catalog" data-search-filter="Thousand Sunny">Mô hình Tàu Thousand Sunny</a>
+                        <a href="#catalog" data-search-filter="Going Merry">Mô hình Tàu Going Merry</a>
+                        <a href="#catalog" data-search-filter="Red Force">One Piece Red Force (Tứ Hoàng Shanks)</a>
+                    </div>
+                    <div class="mega-column">
+                        <h4>Sản Phẩm Hot - Mới Về</h4>
+                        <a href="#catalog" data-search-filter="MGEX">MGEX Strike Freedom (Hot)</a>
+                        <a href="#catalog" data-search-filter="Unleashed">PG Unleashed RX-78-2 (Cực hiếm)</a>
+                        <a href="#catalog" data-search-filter="Aerial">HG Gundam Aerial</a>
+                        <a href="#catalog" data-search-filter="Hi-Nu">RG Hi-Nu Gundam</a>
+                        <a href="#catalog" data-search-filter="Barbatos">MG Gundam Barbatos</a>
+                    </div>
+                </div>
+            </div>
+            <a href="#grades">Phân cấp Grade</a>
+            <a href="#about">Studio</a>
+            <a href="#tracking">Theo dõi đơn hàng</a>
+        </nav>
+        <div class="header-actions">
+            <button class="icon-button" id="search-button" aria-label="Tìm sản phẩm" title="Tìm kiếm">
+                <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+            </button>
+            <button class="icon-button" id="account-button" aria-label="Đơn hàng &amp; Tài khoản" title="Tài khoản">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg>
+            </button>
+            <button class="icon-button wishlist-toggle" id="wishlist-button" aria-label="Sản phẩm yêu thích" title="Danh sách yêu thích">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+                <span class="wishlist-count" id="wishlist-count">0</span>
+            </button>
+            <button class="cart-toggle" id="cart-button" aria-label="Mở giỏ hàng" title="Giỏ hàng">
+                <svg viewBox="0 0 24 24"><path d="M5 7h14l1 14H4L5 7Z M8 8V6a4 4 0 0 1 8 0v2"/></svg>
+                <span class="cart-count">0</span>
+            </button>
+            <button class="icon-button mobile-only" id="menu-button" aria-label="Mở menu" aria-expanded="false">☰</button>
+        </div>
+    </header>
 
-      <div id="nav-user-area" style="display:flex;align-items:center;gap:12px;"></div>
-    </div>
-  </header>
+    <nav class="mobile-menu" id="mobile-menu" hidden>
+        <a href="#home">Trang chủ</a>
+        <a href="#catalog">Bộ sưu tập Gunpla</a>
+        <a href="#wishlist" style="display:flex;align-items:center;justify-content:space-between;"><span>Sản phẩm yêu thích ❤️</span><span class="wishlist-count" id="mobile-wishlist-count" style="position:static;display:inline-flex;">0</span></a>
+        <a href="#grades">Phân cấp Grade</a>
+        <a href="#about">Về Studio</a>
+        <a href="#tracking">Theo dõi đơn hàng</a>
+        <a href="#account">Tài khoản &amp; Đơn mua</a>
+        <a href="#admin">Quản trị Studio</a>
+    </nav>
 
-  <!-- HERO BANNER -->
-  <section style="position:relative;background:linear-gradient(180deg, #1e1b4b 0%, #090c10 100%);padding:70px 24px;text-align:center;border-bottom:1px solid #1e293b;">
-    <div style="max-width:800px;margin:0 auto;">
-      <span style="display:inline-block;background:#312e81;color:#a5b4fc;font-size:12.5px;font-weight:700;padding:4px 14px;border-radius:20px;text-transform:uppercase;margin-bottom:16px;">
-        Bandai Spirits & Gunpla Studio
-      </span>
-      <h1 style="font-size:38px;font-weight:900;color:#fff;margin-bottom:16px;line-height:1.2;">
-        NGHỆ THUẬT LẮP RÁP GUNPLA CHÍNH HÃNG
-      </h1>
-      <p style="color:#94a3b8;font-size:16px;margin-bottom:28px;line-height:1.6;">
-        Khám phá không gian trưng bày các dòng mô hình Gunpla cao cấp từ SD, HG, RG, MG cho đến PG Unleashed và Thuyền chiến One Piece.
-      </p>
-      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
-        <a href="products.html" style="padding:14px 28px;background:#e60012;color:#fff;text-decoration:none;border-radius:8px;font-weight:800;font-size:15px;box-shadow:0 4px 20px rgba(230,0,18,0.4);">
-          Khám phá mô hình &rarr;
+    <main id="storefront">
+        <!-- TRANG 1: TRANG CHỦ (#home) -->
+        <div class="page-view" id="page-home">
+            <section class="hero" id="home" aria-label="Khu vực triển lãm chính 3caidonhua">
+                <video id="hero-video" autoplay muted loop playsinline preload="metadata" poster="/assets/hero-poster.jpg" aria-hidden="true">
+                    <source src="/assets/hero.mp4" type="video/mp4">
+                </video>
+                <div class="hero-shade"></div>
+                <div class="hero-ruler" aria-hidden="true">
+                    <span>KHÔNG GIAN TRƯNG BÀY</span><i></i><span>PHIÊN BẢN RX–78–2 ĐẶC BIỆT</span>
+                </div>
+                <div class="hero-content">
+                    <h1>TỪNG MẢNH GHÉP.<br><span>MỘT VŨ TRỤ.</span></h1>
+                    <p>Nơi đam mê Gunpla trở thành nghệ thuật trưng bày đỉnh cao.<br>Trải nghiệm từng đường nét cơ khí và tự tay tạo nên kiệt tác của bạn.</p>
+                    <div class="hero-actions">
+                        <a class="button primary" href="#catalog">Khám phá bộ sưu tập <span>↗</span></a>
+                        <a class="hero-secondary" href="#grades">Tìm hiểu các Grade <span>→</span></a>
+                    </div>
+                </div>
+                <div class="hero-bottom">
+                    <a href="#catalog" class="scroll-hint"><span>↓</span> CUỘN XEM TRIỂN LÃM</a>
+                    <span class="hero-caption">BỘ SƯU TẬP MÔ HÌNH CHÍNH HÃNG</span>
+                    <button id="video-toggle" class="video-toggle" aria-label="Tạm dừng video">Ⅱ <span>Tạm dừng</span></button>
+                </div>
+            </section>
+
+            <div class="ticker" aria-hidden="true">
+                <span>CHẤT LƯỢNG CHÍNH HÃNG</span><b>✳</b>
+                <span>機動戦士ガンダム</span><b>✳</b>
+                <span>MÔ HÌNH LẮP RÁP CHÍNH XÁC</span><b>✳</b>
+                <span>3 CÁI ĐỒ NHỰA · KHÔNG GIAN SƯU TẦM</span><b>✳</b>
+                <span>TRẢI NGHIỆM ĐAM MÊ ĐÍCH THỰC</span><b>✳</b>
+            </div>
+
+            <!-- CÁC KHỐI DANH MỤC TRANG CHỦ THEO CHUẨN GUNDAMCHAT.COM -->
+            <section class="section home-catalog-sections" style="padding-top:10px;">
+                <!-- 1. MÔ HÌNH MỚI VỀ -->
+                <div class="gdc-header-bar">
+                    <div class="gdc-bar-title">MÔ HÌNH MỚI VỀ</div>
+                    <a href="#catalog" class="gdc-bar-link">Xem tất cả ›</a>
+                </div>
+                <div class="product-grid" id="home-new-products"></div>
+
+                <!-- 2. MÔ HÌNH SNAA -->
+                <div class="gdc-header-bar">
+                    <div class="gdc-bar-title">MÔ HÌNH SNAA (HIỆP SĨ BÀN TRÒN &amp; MECHA)</div>
+                    <a href="#catalog" class="gdc-bar-link" data-search-filter="SNAA">Xem tất cả SNAA ›</a>
+                </div>
+                <div class="product-grid" id="home-snaa-products"></div>
+
+                <!-- 3. MÔ HÌNH GUNDAM BANDAI HOT -->
+                <div class="gdc-header-bar">
+                    <div class="gdc-bar-title">MÔ HÌNH GUNDAM BANDAI BÁN CHẠY</div>
+                    <a href="#catalog" class="gdc-bar-link" data-brand-filter="Bandai">Xem tất cả Bandai ›</a>
+                </div>
+                <div class="product-grid" id="home-bandai-products"></div>
+
+                <!-- 4. DỤNG CỤ & PHỤ KIỆN LẮP RÁP -->
+                <div class="gdc-header-bar">
+                    <div class="gdc-bar-title">DỤNG CỤ - PHỤ KIỆN LẮP RÁP &amp; SƠN SỬA</div>
+                    <a href="#catalog" class="gdc-bar-link" data-filter-link="TOOLS">Xem tất cả dụng cụ ›</a>
+                </div>
+                <div class="product-grid" id="home-tools-products"></div>
+
+                <div class="home-more-cta" style="margin-top:36px;text-align:center;">
+                    <a href="#catalog" class="button primary" style="min-height:50px;padding:14px 36px;font-size:15px;font-weight:700;">
+                        Khám phá toàn bộ sản phẩm <span>↗</span>
+                    </a>
+                </div>
+            </section>
+        </div>
+
+        <!-- TRANG 2: BỘ SƯU TẬP MÔ HÌNH (#catalog) -->
+        <div class="page-view" id="page-catalog" hidden>
+            <section class="section catalog-section" id="catalog">
+                <div class="section-top">
+                    <div>
+                        <h2>Bộ Sưu Tập Mô Hình</h2>
+                    </div>
+                    <p>Khám phá các bộ kit Gunpla tuyển chọn từ Universal Century đến vũ trụ đương đại, dụng cụ lắp ráp và mô hình chính hãng.</p>
+                </div>
+                <div class="catalog-tools">
+                    <div class="filter-tabs" id="filters" aria-label="Lọc theo Grade">
+                        <button class="selected" data-grade="all" aria-pressed="true">Tất cả</button>
+                        <button data-grade="SD" aria-pressed="false">SD Gundam</button>
+                        <button data-grade="HG" aria-pressed="false">High Grade (1/144)</button>
+                        <button data-grade="RG" aria-pressed="false">Real Grade (1/144)</button>
+                        <button data-grade="MG" aria-pressed="false">Master Grade (1/100)</button>
+                        <button data-grade="MGEX" aria-pressed="false">MGEX / Ver.Ka</button>
+                        <button data-grade="PG" aria-pressed="false">Perfect Grade (1/60)</button>
+                        <button data-grade="Mega Size" aria-pressed="false">Mega Size (1/48)</button>
+                        <button data-grade="IBO" aria-pressed="false">IBO &amp; RE/100</button>
+                        <button data-grade="TOOLS" aria-pressed="false">Bút kẻ &amp; Dụng cụ</button>
+                        <button data-grade="ONEPIECE" aria-pressed="false">Mô hình One Piece</button>
+                    </div>
+                    <div class="search-sort">
+                        <label class="search-field">
+                            <span>⌕</span>
+                            <input id="search" type="search" placeholder="Tìm tên, SKU, series…" aria-label="Tìm tên hoặc SKU">
+                        </label>
+                        <select id="brand-select" aria-label="Lọc theo thương hiệu">
+                            <option value="all">Tất cả hãng</option>
+                            <option value="Bandai">Bandai Spirits</option>
+                            <option value="Daban">Daban Model</option>
+                            <option value="Jijia">Jijia Model</option>
+                        </select>
+                        <select id="sort" aria-label="Sắp xếp sản phẩm">
+                            <option value="default">Nổi bật nhất</option>
+                            <option value="price-up">Giá tăng dần</option>
+                            <option value="price-down">Giá giảm dần</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="catalog-meta">
+                    <span id="result-count">Đang tải mô hình...</span>
+                    <span>Bandai Spirits Genuine Products · Hình ảnh minh họa</span>
+                </div>
+                <div class="product-grid" id="products"></div>
+                <div id="catalog-pagination" style="display:flex;justify-content:center;align-items:center;gap:6px;margin:36px 0 20px 0;flex-wrap:wrap;"></div>
+            </section>
+        </div>
+
+        <!-- TRANG 3: PHÂN CẤP GRADE (#grades) -->
+        <div class="page-view" id="page-grades" hidden>
+            <section class="section grades-section" id="grades">
+                <div class="section-top">
+                    <div>
+                        <h2>Phân Cấp Grade Chuẩn Nhật Bản</h2>
+                    </div>
+                    <p>Mỗi phân cấp (Grade) mang đến một cấp độ chi tiết, tỉ lệ và trải nghiệm lắp ráp khác biệt.</p>
+                </div>
+                <div class="grade-grid">
+                    <a href="#catalog" data-filter-link="SD" class="grade-tile">
+                        <span class="grade-number">SUPER DEFORMED · CHIBI</span>
+                        <strong>SD<span>↗</span></strong>
+                        <div class="grade-badge-tag">CHIBI &amp; DỄ LẮP RÁP</div>
+                        <p>Dễ thương, khớp ráp đơn giản không cần kìm, phù hợp cho người mới bắt đầu hoặc để bàn làm việc.</p>
+                        <span class="grade-foot">XEM TẤT CẢ SD GUNDAM →</span>
+                    </a>
+                    <a href="#catalog" data-filter-link="HG" class="grade-tile">
+                        <span class="grade-number">HIGH GRADE · 1/144</span>
+                        <strong>HG<span>↗</span></strong>
+                        <div class="grade-badge-tag">TIÊU CHUẨN &amp; ĐA DẠNG MẪU</div>
+                        <p>Nhỏ gọn, dễ tiếp cận, khớp nối linh hoạt. Bộ sưu tập đồ sộ nhất thế giới Gunpla.</p>
+                        <span class="grade-foot">XEM TẤT CẢ HIGH GRADE →</span>
+                    </a>
+                    <a href="#catalog" data-filter-link="RG" class="grade-tile">
+                        <span class="grade-number">REAL GRADE · 1/144 REAL</span>
+                        <strong>RG<span>↗</span></strong>
+                        <div class="grade-badge-tag">CHI TIẾT SIÊU THỰC &amp; TINH XẢO</div>
+                        <p>Kích thước 1/144 nhưng trang bị khung xương Advanced MS Joint và decal siêu tinh xảo.</p>
+                        <span class="grade-foot">XEM TẤT CẢ REAL GRADE →</span>
+                    </a>
+                    <a href="#catalog" data-filter-link="MG" class="grade-tile">
+                        <span class="grade-number">MASTER GRADE · 1/100</span>
+                        <strong>MG<span>↗</span></strong>
+                        <div class="grade-badge-tag">TỶ LỆ CHUẨN &amp; KHUNG XƯƠNG CƠ KHÍ</div>
+                        <p>Khung xương cơ khí hoàn chỉnh, buồng lái mở và tỷ lệ 1/100 uy nghi. Tâm điểm cho mọi tủ kính.</p>
+                        <span class="grade-foot">XEM TẤT CẢ MASTER GRADE →</span>
+                    </a>
+                    <a href="#catalog" data-filter-link="MGEX" class="grade-tile">
+                        <span class="grade-number">MG EXTREME / VER.KA · 1/100</span>
+                        <strong>MGEX<span>↗</span></strong>
+                        <div class="grade-badge-tag">KIỆT TÁC CƠ KHÍ NGHỆ THUẬT</div>
+                        <p>Đỉnh cao nghệ thuật cơ khí với khung mạ đa tầng kim loại hoặc phong cách Katoki Hajime trứ danh.</p>
+                        <span class="grade-foot">XEM DÒNG MGEX / VER.KA →</span>
+                    </a>
+                    <a href="#catalog" data-filter-link="PG" class="grade-tile">
+                        <span class="grade-number">PERFECT GRADE · 1/60</span>
+                        <strong>PG<span>↗</span></strong>
+                        <div class="grade-badge-tag">ĐỈNH CAO CÔNG NGHỆ LẮP RÁP</div>
+                        <p>Đỉnh cao công nghệ lắp ráp với hàng nghìn chi tiết, hệ thống đèn LED và biên độ cử động hoàn mỹ.</p>
+                        <span class="grade-foot">XEM TẤT CẢ PERFECT GRADE →</span>
+                    </a>
+                </div>
+            </section>
+        </div>
+
+        <!-- TRANG 4: VỀ STUDIO (#about) -->
+        <div class="page-view" id="page-about" hidden>
+            <section class="about section" id="about">
+                <div class="about-label">
+                    <span>BA CÁI ĐỒ NHỰA.<br>TRẢI NGHIỆM ĐỈNH CAO.</span>
+                </div>
+                <div>
+                    <h2>Từng chi tiết cơ học.<br><span>Một tác phẩm để đời.</span></h2>
+                    <p>Tại 3caidonhua, chúng mình coi mỗi bộ kit không đơn thuần là "nhựa ép khuôn" — mà là thành quả của hàng chục năm nghiên cứu kỹ thuật cơ khí từ Bandai Spirits Nhật Bản.</p>
+                    <p>Một chiếc kìm cắt chuyên dụng, vài dải runner đa sắc màu, cùng sự tập trung tĩnh lặng trong một buổi chiều. Đó chính là không gian thư giãn và sáng tạo tuyệt vời nhất.</p>
+                    <div class="studio-signature">
+                        <div class="studio-stat">
+                            <small>CHUẨN THIẾT KẾ</small>
+                            <strong>BANDAI SPIRITS</strong>
+                        </div>
+                        <div class="studio-stat">
+                            <small>CÔNG NGHỆ KHUÔN</small>
+                            <strong>MULTI-COLOR INJECTION</strong>
+                        </div>
+                        <div class="studio-stat">
+                            <small>ĐỘ TINH XẢO</small>
+                            <strong>HIGH PRECISION</strong>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- TRANG 5: THANH TOÁN ĐƠN HÀNG (#checkout) -->
+        <div class="page-view" id="page-checkout" hidden>
+            <!-- Được render động bằng renderDedicatedCheckout() trong app.js -->
+        </div>
+
+        <!-- TRANG 6: CHI TIẾT SẢN PHẨM RIÊNG BIỆT (DIRTYCOINS-STYLE) -->
+        <div class="page-view" id="page-product-detail" hidden>
+            <!-- Được render động bằng renderProductDetailPage() trong app.js -->
+        </div>
+
+        <!-- TRANG 7: TRANG ĐĂNG KÝ / ĐĂNG NHẬP RIÊNG BIỆT (#login / #register) -->
+        <div class="page-view" id="page-auth" hidden>
+            <!-- Được render động bằng renderAuthPage() trong app.js -->
+        </div>
+
+        <!-- TRANG 8: THEO DÕI ĐƠN HÀNG & TÀI KHOẢN (#account / #tracking / #orders) -->
+        <div class="page-view" id="page-account" hidden>
+            <!-- Được render động bằng renderAccountPage() trong app.js -->
+        </div>
+
+        <!-- TRANG 9: DANH SÁCH YÊU THÍCH (#wishlist) -->
+        <div class="page-view" id="page-wishlist" hidden>
+            <!-- Được render động bằng renderWishlistPage() trong app.js -->
+        </div>
+    </main>
+
+    <main id="admin" hidden></main>
+
+    <footer>
+        <a href="#home" class="footer-brand" aria-label="3caidonhua trang chủ">
+            <img src="/assets/logo3cai.png" alt="3caidonhua" class="footer-logo-img">
         </a>
-        <a href="orders.html" style="padding:14px 24px;background:#1e293b;color:#fff;border:1px solid #334155;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;">
-          Tra cứu tiến trình đơn hàng
-        </a>
-      </div>
-    </div>
-  </section>
+        <div class="footer-info">
+            <span>BUILD YOUR OWN UNIVERSE · SHIZUOKA BANDAI HOBBY CENTER INSPIRATION</span>
+            <small>Cửa hàng mô hình Gunpla chính hãng Bandai Spirits · Hệ thống đặt hàng trực tuyến</small>
+        </div>
+        <div class="footer-links">
+            <a href="#catalog">Sản phẩm</a>
+            <a href="#wishlist">Sản phẩm yêu thích ❤️</a>
+            <a href="#grades">Phân cấp Grade</a>
+            <a href="#tracking">Theo dõi đơn hàng</a>
+            <a href="#login">Đăng nhập / Đăng ký</a>
+            <a href="#admin" class="admin-link">Quản trị Studio ↗</a>
+        </div>
+    </footer>
 
-  <!-- PHÂN CẤP GRADE -->
-  <section style="max-width:1200px;margin:50px auto 30px;padding:0 24px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
-      <h2 style="font-size:22px;font-weight:800;color:#fff;">CÁC PHÂN CẤP GUNPLA NỔI BẬT</h2>
-      <a href="products.html" style="color:#38bdf8;text-decoration:none;font-size:14px;font-weight:600;">Xem tất cả &rarr;</a>
-    </div>
+    <!-- Slide-over Drawer / Panel (Ẩn mặc định, chỉ hiển thị khi mở giỏ hàng hoặc xem chi tiết) -->
+    <dialog id="panel">
+        <div class="dialog-top">
+            <span id="panel-title"></span>
+            <button id="close-panel" class="icon-button" aria-label="Đóng">✕</button>
+        </div>
+        <div id="panel-body"></div>
+    </dialog>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;">
-      <a href="products.html?grade=SD" style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;text-decoration:none;text-align:center;color:#fff;transition:0.2s;" onmouseover="this.style.borderColor='#38bdf8'" onmouseout="this.style.borderColor='#334155'">
-        <div style="font-size:24px;font-weight:900;color:#38bdf8;margin-bottom:6px;">SD Gunpla</div>
-        <div style="font-size:13px;color:#94a3b8;">Dễ thương, dễ lắp, giá tốt</div>
-      </a>
-      <a href="products.html?grade=HG" style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;text-decoration:none;text-align:center;color:#fff;transition:0.2s;" onmouseover="this.style.borderColor='#38bdf8'" onmouseout="this.style.borderColor='#334155'">
-        <div style="font-size:24px;font-weight:900;color:#10b981;margin-bottom:6px;">HG 1/144</div>
-        <div style="font-size:13px;color:#94a3b8;">High Grade chuẩn anime</div>
-      </a>
-      <a href="products.html?grade=RG" style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;text-decoration:none;text-align:center;color:#fff;transition:0.2s;" onmouseover="this.style.borderColor='#38bdf8'" onmouseout="this.style.borderColor='#334155'">
-        <div style="font-size:24px;font-weight:900;color:#f59e0b;margin-bottom:6px;">RG 1/144</div>
-        <div style="font-size:13px;color:#94a3b8;">Real Grade khung xương thực tế</div>
-      </a>
-      <a href="products.html?grade=MG" style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;text-decoration:none;text-align:center;color:#fff;transition:0.2s;" onmouseover="this.style.borderColor='#38bdf8'" onmouseout="this.style.borderColor='#334155'">
-        <div style="font-size:24px;font-weight:900;color:#e60012;margin-bottom:6px;">MG 1/100</div>
-        <div style="font-size:13px;color:#94a3b8;">Master Grade đẳng cấp cơ khí</div>
-      </a>
-      <a href="products.html?grade=ONEPIECE" style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;text-decoration:none;text-align:center;color:#fff;transition:0.2s;" onmouseover="this.style.borderColor='#38bdf8'" onmouseout="this.style.borderColor='#334155'">
-        <div style="font-size:24px;font-weight:900;color:#ec4899;margin-bottom:6px;">One Piece</div>
-        <div style="font-size:13px;color:#94a3b8;">Thuyền chiến Grand Ship</div>
-      </a>
-    </div>
-  </section>
-
-  <!-- SẢN PHẨM MỚI VỀ -->
-  <section style="max-width:1200px;margin:40px auto 60px;padding:0 24px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
-      <div>
-        <h2 style="font-size:22px;font-weight:800;color:#fff;">MÔ HÌNH NỔI BẬT &amp; BÁN CHẠY</h2>
-        <p style="color:#94a3b8;font-size:14px;margin-top:4px;">Chính hãng Bandai Spirits, nguyên seal hộp, giao hàng toàn quốc.</p>
-      </div>
-      <a href="products.html" style="padding:8px 16px;background:#1e293b;border:1px solid #334155;color:#fff;text-decoration:none;border-radius:6px;font-size:13.5px;font-weight:700;">Xem tất cả sản phẩm &rarr;</a>
-    </div>
-
-    <!-- Grid sản phẩm được nạp động từ products.js -->
-    <div id="products-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));gap:24px;"></div>
-  </section>
-
-  <!-- FOOTER -->
-  <footer style="background:#0b1120;border-top:1px solid #1e293b;padding:40px 24px;color:#64748b;font-size:13.5px;text-align:center;">
-    <div style="max-width:1200px;margin:0 auto;">
-      <p style="color:#94a3b8;font-weight:600;margin-bottom:8px;">3caidonhua Gundam Studio — Đồ án môn WEB503 NodeJS Express MongoDB</p>
-      <p>© 2026 3caidonhua. Dự án học tập được xây dựng theo kiến trúc MVC chuẩn mực.</p>
-    </div>
-  </footer>
-
-  <!-- SCRIPT MODULES TÁCH RỜI -->
-  <script type="module" src="js/api.js"></script>
-  <script type="module" src="js/auth.js"></script>
-  <script type="module" src="js/cart.js"></script>
-  <script type="module" src="js/products.js"></script>
+    <div id="toast" role="status" aria-live="polite"></div>
 </body>
+
 </html>
