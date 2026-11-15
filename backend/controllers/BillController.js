@@ -4,19 +4,42 @@
 // -> Cập nhật trạng thái giao hàng -> Thanh toán -> Hủy đơn & Hoàn trả tồn kho
 // ====================================================================================
 
+const mongoose = require('mongoose');
 const billModel = require('../models/bill');
 const billDetailModel = require('../models/billdetail');
 const productModel = require('../models/product');
 const userModel = require('../models/user');
 const { cartsByUser, getUserId } = require('../routes/cart');
+const {
+    getFallbackProducts,
+    getFallbackBills,
+    findFallbackBillById,
+    addFallbackBill,
+    findFallbackUserById
+} = require('../utils/fallbackStore');
+
+const isDbConnected = () => mongoose.connection.readyState === 1;
 
 /**
  * [NGHIỆP VỤ ĐƠN HÀNG] - Helper ánh xạ dữ liệu hóa đơn kèm danh sách chi tiết sản phẩm
- * @param {Object} b - Document đơn hàng từ billModel
- * @returns {Object} Đối tượng đơn hàng chuẩn hóa cho giao diện Frontend
  */
 async function mapBillWithDetails(b) {
-    // Lấy chi tiết từng sản phẩm trong hóa đơn qua billDetailModel và populate thông tin product
+    if (!isDbConnected() || b.items) {
+        let step = 1;
+        if (b.status === 'confirmed' || b.status === 'processing') step = 2;
+        else if (b.status === 'shipping' || b.status === 'delivered') step = 3;
+        else if (b.status === 'completed') step = 4;
+        else if (b.status === 'cancelled') step = 0;
+        return {
+            ...b,
+            id: String(b._id || b.id),
+            _id: String(b._id || b.id),
+            code: b.code || ('HD' + String(b._id || b.id).slice(-6).toUpperCase()),
+            total: b.totalMoney || b.total || 0,
+            step
+        };
+    }
+
     const details = await billDetailModel.find({ bill: b._id }).populate('product');
     const items = details.map(d => ({
         id: d.product?._id?.toString() || d._id.toString(),
@@ -31,12 +54,11 @@ async function mapBillWithDetails(b) {
         subtotal: (d.price || 0) * (d.quantity || 1)
     }));
 
-    // Tính bước tiến trình đơn hàng (Step Tracker: 1=Chờ xử lý, 2=Đã xác nhận, 3=Đang giao, 4=Hoàn thành)
     let step = 1;
     if (b.status === 'confirmed' || b.status === 'processing') step = 2;
     else if (b.status === 'shipping' || b.status === 'delivered') step = 3;
     else if (b.status === 'completed') step = 4;
-    else step = 0; // Đơn bị hủy (cancelled) hoặc trả hàng
+    else step = 0;
 
     return {
         id: b._id.toString(),
@@ -64,20 +86,21 @@ async function mapBillWithDetails(b) {
 }
 
 const BillController = {
-    /**
-     * [NGHIỆP VỤ ĐƠN HÀNG] - 1. Lấy tất cả đơn hàng (Hỗ trợ phân quyền User / Admin)
-     * Endpoint: GET /bills hoặc GET /orders hoặc GET /api/orders
-     * Logic:
-     *  - Nếu là Khách hàng: Chỉ xem được danh sách đơn hàng của chính mình
-     *  - Nếu là Quản trị viên (Admin): Xem được toàn bộ đơn hàng của toàn hệ thống
-     */
     getAll: async (req, res) => {
         try {
+            if (!isDbConnected()) {
+                const bills = getFallbackBills();
+                const result = [];
+                for (const b of bills) {
+                    result.push(await mapBillWithDetails(b));
+                }
+                return res.status(200).json(result);
+            }
+
             const userId = req.cookies?.userId;
             let query = {};
-            if (userId) {
+            if (userId && /^[0-9a-fA-F]{24}$/.test(String(userId))) {
                 const user = await userModel.findById(userId);
-                // Khách hàng thông thường chỉ lọc đơn có user: user._id
                 if (user && user.role !== 'admin') {
                     query = { user: user._id };
                 }
@@ -94,12 +117,13 @@ const BillController = {
         }
     },
 
-    /**
-     * [NGHIỆP VỤ ĐƠN HÀNG] - 2. Lấy thông tin chi tiết một đơn hàng theo ID
-     * Endpoint: GET /bills/:id hoặc GET /orders/:id
-     */
     getById: async (req, res) => {
         try {
+            if (!isDbConnected()) {
+                const bill = findFallbackBillById(req.params.id);
+                if (!bill) return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+                return res.status(200).json(await mapBillWithDetails(bill));
+            }
             const bill = await billModel.findById(req.params.id).populate('user');
             if (!bill) {
                 return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
@@ -111,51 +135,126 @@ const BillController = {
         }
     },
 
-    /**
-     * [NGHIỆP VỤ ĐẶT HÀNG / CHECKOUT] - 3. Khách hàng tạo đơn hàng mới (Checkout)
-     * Endpoint: POST /bills hoặc POST /orders hoặc POST /api/orders
-     * Các bước xử lý nghiệp vụ:
-     *  1. Lấy thông tin khách hàng, địa chỉ, phương thức thanh toán và giỏ hàng
-     *  2. [Kiểm tra tồn kho]: Duyệt từng món trong giỏ, nếu kho không đủ -> Báo lỗi ngay lập tức
-     *  3. Tính tổng tiền đơn hàng (totalMoney)
-     *  4. Khởi tạo Document `billModel` với trạng thái ban đầu:
-     *     - status: 'pending' (Chờ xác nhận)
-     *     - paymentStatus: 'unpaid' (Chưa thanh toán)
-     *     - Sinh mã vận đơn tự động qua Giao Hàng Nhanh (GHN)
-     *     - Khởi tạo lịch sử tiến trình đơn hàng (statusHistory)
-     *  5. Lưu chi tiết sản phẩm vào `billDetailModel`
-     *  6. [TRỪ TỒN KHO TỰ ĐỘNG]: Giảm số lượng `quantity` của sản phẩm trong MongoDB
-     *  7. [LÀM RỖNG GIỎ HÀNG]: Xóa giỏ hàng tạm của user sau khi đặt hàng thành công
-     */
     create: async (req, res) => {
         try {
             const { recipient, phone, address, paymentMethod, note, items } = req.body;
             const uid = getUserId(req);
-            const cart = (cartsByUser && cartsByUser[uid]) ? cartsByUser[uid] : (items || []);
+            const cart = (cartsByUser && cartsByUser[uid] && cartsByUser[uid].length > 0) ? cartsByUser[uid] : (items || []);
 
-            // Xác định tài khoản đặt hàng (từ Cookie hoặc tài khoản mặc định)
+            if (!isDbConnected()) {
+                const fbProducts = getFallbackProducts();
+                let totalMoney = 0;
+                const mappedItems = [];
+
+                for (const item of cart) {
+                    const pid = item.variantId || item.id || item.product || item.productId;
+                    const prod = fbProducts.find(p => String(p.id) === String(pid) || String(p._id) === String(pid));
+                    const maxStock = prod ? (prod.quantity ?? prod.stock ?? 12) : 12;
+                    if (prod && maxStock < item.quantity) {
+                        return res.status(400).json({
+                            status: 0,
+                            message: `Sản phẩm "${prod.name}" không đủ số lượng tồn kho (chỉ còn ${maxStock} bộ, yêu cầu ${item.quantity} bộ).`
+                        });
+                    }
+                    if (prod) {
+                        prod.quantity = Math.max(0, maxStock - item.quantity);
+                        prod.stock = prod.quantity;
+                    }
+                    const price = item.price || prod?.price || 500000;
+                    const qty = item.quantity || 1;
+                    totalMoney += price * qty;
+                    mappedItems.push({
+                        id: String(pid || 'p1'),
+                        productId: String(pid || 'p1'),
+                        name: item.name || prod?.name || 'Mô hình Gunpla Bandai',
+                        sku: prod?.sku || ('KIT-' + String(pid || '0000').slice(-4).toUpperCase()),
+                        grade: item.grade || prod?.grade || 'HG',
+                        scale: item.scale || prod?.scale || '1/144',
+                        image: item.image || prod?.image || '/assets/hero-poster.jpg',
+                        quantity: qty,
+                        price,
+                        subtotal: price * qty
+                    });
+                }
+
+                if (totalMoney <= 0) totalMoney = Number(req.body.totalMoney) || 1150000;
+
+                const newId = '672000000000' + Date.now().toString().slice(-12);
+                const code = 'HD' + newId.slice(-6).toUpperCase();
+                const userObj = findFallbackUserById(uid);
+                const newBill = addFallbackBill({
+                    id: newId,
+                    _id: newId,
+                    code,
+                    userId: uid,
+                    recipient: recipient || userObj?.name || 'Khách hàng',
+                    phone: phone || userObj?.phone || '0907652267',
+                    address: address || userObj?.address || 'TP. Hồ Chí Minh, Việt Nam',
+                    note: note || '',
+                    paymentMethod: paymentMethod || 'COD',
+                    total: totalMoney,
+                    totalMoney: totalMoney,
+                    status: 'pending',
+                    paymentStatus: 'unpaid',
+                    codStatus: 'uncollected',
+                    amountPaid: 0,
+                    amountRefunded: 0,
+                    carrier: 'Giao Hàng Nhanh (GHN)',
+                    trackingNumber: 'GHN' + newId.slice(-6).toUpperCase(),
+                    step: 1,
+                    createdAt: new Date(),
+                    returnRequests: [],
+                    refundRequests: [],
+                    statusHistory: [
+                        {
+                            fromStatus: '',
+                            toStatus: 'pending',
+                            action: 'Đặt hàng thành công',
+                            actor: 'Khách hàng',
+                            note: `Phương thức thanh toán: ${paymentMethod || 'COD'}`,
+                            timestamp: new Date()
+                        }
+                    ],
+                    items: mappedItems
+                });
+
+                if (cartsByUser && cartsByUser[uid]) {
+                    cartsByUser[uid] = [];
+                }
+
+                return res.status(201).json({
+                    status: 1,
+                    message: 'Đặt hàng thành công',
+                    id: newBill.id,
+                    _id: newBill._id,
+                    code: newBill.code,
+                    bill: newBill
+                });
+            }
+
             let user = null;
-            if (req.cookies?.userId) {
+            if (req.cookies?.userId && /^[0-9a-fA-F]{24}$/.test(String(req.cookies.userId))) {
                 user = await userModel.findById(req.cookies.userId);
             }
             if (!user) {
                 user = await userModel.findOne({ email: 'cuckydangiu111@gmail.com' }) || await userModel.findOne();
             }
 
-            // BƯỚC 1: KIỂM TRA TỒN KHO TRƯỚC KHI ĐẶT HÀNG
             if (cart.length > 0) {
                 for (const item of cart) {
-                    const prod = await productModel.findById(item.variantId || item.id || item.product || item.productId);
-                    if (prod && prod.quantity < item.quantity) {
-                        return res.status(400).json({
-                            status: 0,
-                            message: `Sản phẩm "${prod.name}" không đủ số lượng tồn kho (chỉ còn ${prod.quantity} bộ, yêu cầu ${item.quantity} bộ).`
-                        });
+                    const pid = item.variantId || item.id || item.product || item.productId;
+                    if (/^[0-9a-fA-F]{24}$/.test(String(pid))) {
+                        const prod = await productModel.findById(pid);
+                        if (prod && prod.quantity < item.quantity) {
+                            return res.status(400).json({
+                                status: 0,
+                                message: `Sản phẩm "${prod.name}" không đủ số lượng tồn kho (chỉ còn ${prod.quantity} bộ, yêu cầu ${item.quantity} bộ).`
+                            });
+                        }
                     }
                 }
             }
 
-            // BƯỚC 2: TÍNH TỔNG TIỀN ĐƠN HÀNG
             let totalMoney = 0;
             if (cart.length > 0) {
                 totalMoney = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -163,18 +262,17 @@ const BillController = {
                 totalMoney = Number(req.body.totalMoney) || 1150000;
             }
 
-            // BƯỚC 3: TẠO HÓA ĐƠN TRONG CƠ SỞ DỮ LIỆU
             const newBill = await billModel.create({
-                user: user._id,
+                user: user ? user._id : undefined,
                 totalMoney: totalMoney,
                 paymentMethod: paymentMethod || 'COD',
-                status: 'pending',              // Trạng thái đơn ban đầu: Chờ xác nhận
-                paymentStatus: 'unpaid',        // Trạng thái thanh toán: Chưa thanh toán
-                codStatus: 'uncollected',       // Trạng thái thu hộ COD: Chưa thu tiền
+                status: 'pending',
+                paymentStatus: 'unpaid',
+                codStatus: 'uncollected',
                 amountPaid: 0,
                 shippingAddress: address || 'Việt Nam',
                 phoneNumber: phone || '0907652267',
-                recipientName: recipient || user.name || 'Khách hàng',
+                recipientName: recipient || user?.name || 'Khách hàng',
                 note: note || '',
                 carrier: 'Giao Hàng Nhanh (GHN)',
                 statusHistory: [
@@ -192,29 +290,27 @@ const BillController = {
             newBill.trackingNumber = 'GHN' + newBill._id.toString().slice(-6).toUpperCase();
             await newBill.save();
 
-            // BƯỚC 4: LƯU CHI TIẾT SẢN PHẨM VÀ TRỪ TỒN KHO
             if (cart.length > 0) {
                 for (const item of cart) {
                     let prod = null;
+                    const pid = item.variantId || item.id || item.product || item.productId;
                     try {
-                        prod = await productModel.findById(item.variantId || item.id || item.product || item.productId);
+                        if (/^[0-9a-fA-F]{24}$/.test(String(pid))) {
+                            prod = await productModel.findById(pid);
+                        }
                     } catch (e) {}
 
                     if (prod) {
-                        // Lưu từng dòng sản phẩm vào bảng hóa đơn chi tiết
                         await billDetailModel.create({
                             bill: newBill._id,
                             product: prod._id,
                             quantity: item.quantity,
                             price: item.price
                         });
-
-                        // [TRỪ KHO]: Giảm số lượng tồn kho theo số lượng khách đã mua
                         await productModel.findByIdAndUpdate(prod._id, { $inc: { quantity: -item.quantity } });
                     }
                 }
 
-                // BƯỚC 5: XÓA SẠCH GIỎ HÀNG CỦA KHÁCH HÀNG SAU KHI ĐẶT THÀNH CÔNG
                 if (cartsByUser && cartsByUser[uid]) {
                     cartsByUser[uid] = [];
                 }
@@ -233,29 +329,37 @@ const BillController = {
         }
     },
 
-    /**
-     * [NGHIỆP VỤ XÁC NHẬN & CẬP NHẬT ĐƠN HÀNG] - 4. Admin duyệt đơn, đổi trạng thái
-     * Endpoint: PUT /bills/:id hoặc PATCH /api/admin/orders/:id/status
-     * Các trạng thái đơn:
-     *  - 'pending': Chờ xác nhận
-     *  - 'confirmed' / 'processing': Đã xác nhận & Đang chuẩn bị hàng
-     *  - 'shipping': Đang giao hàng (bàn giao đơn vị vận chuyển)
-     *  - 'delivered' / 'completed': Đã giao hàng thành công & Hoàn tất
-     *  - 'cancelled': Đã hủy đơn
-     */
     update: async (req, res) => {
         try {
+            if (!isDbConnected()) {
+                const bill = findFallbackBillById(req.params.id);
+                if (!bill) return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+                const oldStatus = bill.status;
+                const newStatus = req.body.status;
+                Object.assign(bill, req.body);
+                if (newStatus && newStatus !== oldStatus) {
+                    bill.statusHistory = bill.statusHistory || [];
+                    bill.statusHistory.push({
+                        fromStatus: oldStatus,
+                        toStatus: newStatus,
+                        action: `Chuyển trạng thái sang "${newStatus}"`,
+                        actor: req.body.actor || 'Khách hàng / Quản trị viên',
+                        note: req.body.reason || req.body.note || 'Cập nhật trạng thái đơn hàng',
+                        timestamp: new Date()
+                    });
+                }
+                return res.status(200).json(bill);
+            }
+
             const bill = await billModel.findById(req.params.id);
             if (!bill) return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
 
             const oldStatus = bill.status;
             const newStatus = req.body.status;
 
-            // Cập nhật trạng thái thanh toán nếu có truyền lên
             if (req.body.paymentStatus) bill.paymentStatus = req.body.paymentStatus;
             if (newStatus) bill.status = newStatus;
 
-            // Xử lý cập nhật số tiền đã thanh toán (amountPaid)
             if (req.body.amountPaid !== undefined) {
                 bill.amountPaid = Number(req.body.amountPaid);
             } else if (req.body.paymentStatus === 'paid' && (!bill.amountPaid || bill.amountPaid === 0)) {
@@ -263,7 +367,6 @@ const BillController = {
             }
             if (req.body.note) bill.note = req.body.note;
 
-            // [LỊCH SỬ TIẾN TRÌNH ĐƠN HÀNG]: Tự động ghi log khi có thay đổi trạng thái
             if (newStatus && newStatus !== oldStatus) {
                 let actionText = `Chuyển trạng thái sang "${newStatus}"`;
                 if (newStatus === 'processing') actionText = 'Xác nhận thanh toán & Bắt đầu chuẩn bị hàng';
@@ -280,7 +383,6 @@ const BillController = {
                 });
             }
 
-            // Gán các trường bổ sung khác nếu có
             for (const key of Object.keys(req.body)) {
                 if (!['status', 'paymentStatus', 'amountPaid', 'note', 'statusHistory'].includes(key)) {
                     bill[key] = req.body[key];
@@ -294,12 +396,15 @@ const BillController = {
         }
     },
 
-    /**
-     * [NGHIỆP VỤ ĐƠN HÀNG] - 5. Xóa đơn hàng và các dòng chi tiết tương ứng
-     * Endpoint: DELETE /bills/:id
-     */
     remove: async (req, res) => {
         try {
+            if (!isDbConnected()) {
+                const bills = getFallbackBills();
+                const idx = bills.findIndex(b => String(b._id) === String(req.params.id) || String(b.id) === String(req.params.id));
+                if (idx === -1) return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+                const [deleted] = bills.splice(idx, 1);
+                return res.status(200).json({ message: 'Xóa đơn hàng thành công', deleted });
+            }
             await billDetailModel.deleteMany({ bill: req.params.id });
             const deleted = await billModel.findByIdAndDelete(req.params.id);
             if (!deleted) return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
@@ -309,10 +414,6 @@ const BillController = {
         }
     },
 
-    /**
-     * [NGHIỆP VỤ TRA CỨU ĐƠN HÀNG] - 6. Tra cứu đơn bằng Mã đơn hàng hoặc Số điện thoại
-     * Endpoint: GET /bills/track/:query hoặc POST /bills/track hoặc GET /orders/track/:query
-     */
     track: async (req, res) => {
         try {
             const q = (req.params.query || req.body.query || req.body.code || req.body.phone || '').trim();
@@ -321,12 +422,13 @@ const BillController = {
             }
 
             const cleanCode = q.replace(/^HD/i, '').toLowerCase();
-            const allBills = await billModel.find().populate('user').sort({ createdAt: -1 });
+            const allBills = isDbConnected()
+                ? await billModel.find().populate('user').sort({ createdAt: -1 })
+                : getFallbackBills();
 
-            // Tìm kiếm theo 6 ký tự cuối của Mã đơn hoặc theo Số điện thoại người nhận
             const bills = allBills.filter(b => {
-                const code = b._id.toString().slice(-6).toLowerCase();
-                const phone = (b.phoneNumber || b.user?.phone || '').replace(/\D/g, '');
+                const code = (b.code ? b.code.replace(/^HD/i, '') : String(b._id || b.id).slice(-6)).toLowerCase();
+                const phone = (b.phoneNumber || b.phone || b.user?.phone || '').replace(/\D/g, '');
                 const searchPhone = q.replace(/\D/g, '');
                 return code === cleanCode || (searchPhone.length >= 9 && phone.includes(searchPhone));
             });
@@ -345,20 +447,38 @@ const BillController = {
         }
     },
 
-    /**
-     * [NGHIỆP VỤ HỦY ĐƠN HÀNG & HOÀN KHO] - 7. Khách hàng hoặc Admin yêu cầu hủy đơn
-     * Endpoint: POST /bills/:id/cancel hoặc POST /orders/:id/cancel
-     * Nghiệp vụ quan trọng:
-     *  - Chỉ cho phép hủy khi đơn còn ở bước 'pending' (Chờ duyệt) hoặc 'confirmed' (Đã duyệt nhưng chưa giao)
-     *  - [HOÀN LẠI TỒN KHO]: Tự động cộng lại số lượng sản phẩm đã đặt vào trường `quantity` trong MongoDB
-     *  - Cập nhật trạng thái đơn sang 'cancelled', ghi lý do và lịch sử hủy đơn
-     */
     cancel: async (req, res) => {
         try {
+            if (!isDbConnected()) {
+                const bill = findFallbackBillById(req.params.id);
+                if (!bill) return res.status(404).json({ status: 0, message: 'Không tìm thấy đơn hàng' });
+                if (!['pending', 'confirmed'].includes(bill.status)) {
+                    return res.status(400).json({
+                        status: 0,
+                        message: 'Chỉ có thể hủy đơn hàng khi đơn chưa bàn giao vận chuyển (trạng thái Chờ xác nhận hoặc Đã xác nhận).'
+                    });
+                }
+                const oldStatus = bill.status;
+                bill.status = 'cancelled';
+                bill.cancelReason = req.body.reason || 'Khách hàng tự hủy đơn';
+                bill.cancelRequestedBy = 'customer';
+                bill.cancelStatus = 'approved';
+                bill.cancelledAt = new Date();
+                bill.statusHistory = bill.statusHistory || [];
+                bill.statusHistory.push({
+                    fromStatus: oldStatus,
+                    toStatus: 'cancelled',
+                    action: 'Khách hàng hủy đơn',
+                    actor: 'Người mua',
+                    note: req.body.reason || 'Khách hàng chủ động hủy qua trang theo dõi đơn hàng',
+                    timestamp: new Date()
+                });
+                return res.status(200).json({ status: 1, message: 'Đã hủy đơn hàng thành công!', bill });
+            }
+
             const bill = await billModel.findById(req.params.id);
             if (!bill) return res.status(404).json({ status: 0, message: 'Không tìm thấy đơn hàng' });
 
-            // Đơn hàng đã bàn giao vận chuyển thì không được tự hủy trên web
             if (!['pending', 'confirmed'].includes(bill.status)) {
                 return res.status(400).json({
                     status: 0,
@@ -373,7 +493,6 @@ const BillController = {
             bill.cancelStatus = 'approved';
             bill.cancelledAt = new Date();
 
-            // [NGHIỆP VỤ HOÀN TRẢ TỒN KHO]: Lấy danh sách chi tiết đơn và cộng lại số lượng vào bảng product
             const details = await billDetailModel.find({ bill: bill._id });
             for (const d of details) {
                 if (d.product) {
@@ -381,7 +500,6 @@ const BillController = {
                 }
             }
 
-            // Ghi nhật ký tiến trình hủy đơn
             bill.statusHistory.push({
                 fromStatus: oldStatus,
                 toStatus: 'cancelled',

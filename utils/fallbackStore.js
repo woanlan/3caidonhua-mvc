@@ -151,7 +151,177 @@ function getFallbackCategories() {
   }));
 }
 
+const bcrypt = require('bcryptjs');
+
+const fallbackUsers = [
+  {
+    id: 'u-admin-1',
+    _id: 'u-admin-1',
+    name: 'Lân Nguyễn (Admin)',
+    email: 'cuckydangiu111@gmail.com',
+    password: bcrypt.hashSync('adminpassword', 10),
+    plainPassword: 'adminpassword',
+    role: 'admin',
+    status: 'active',
+    phone: '0907652267',
+    address: 'TP. Hồ Chí Minh, Việt Nam',
+    createdAt: new Date(Date.now() - 30 * 86400000)
+  },
+  {
+    id: 'u-cust-1',
+    _id: 'u-cust-1',
+    name: 'Khách hàng mẫu',
+    email: 'customer@gmail.com',
+    password: bcrypt.hashSync('password123', 10),
+    plainPassword: 'password123',
+    role: 'user',
+    status: 'active',
+    phone: '0907652267',
+    address: 'Quận 1, TP. Hồ Chí Minh',
+    createdAt: new Date(Date.now() - 15 * 86400000)
+  },
+  {
+    id: 'u-cust-2',
+    _id: 'u-cust-2',
+    name: 'Nguyễn Hoàng Lân',
+    email: 'lan@gmail.com',
+    password: bcrypt.hashSync('userpassword', 10),
+    plainPassword: 'userpassword',
+    role: 'user',
+    status: 'active',
+    phone: '0907652267',
+    address: 'TP. Hồ Chí Minh, Việt Nam',
+    createdAt: new Date(Date.now() - 10 * 86400000)
+  }
+];
+
+const fallbackBills = [
+  {
+    id: '672000000000000000982101',
+    _id: '672000000000000000982101',
+    code: 'HD982101',
+    userId: 'u-cust-1',
+    recipient: 'Khách hàng mẫu',
+    phone: '0907652267',
+    address: 'Quận 1, TP. Hồ Chí Minh',
+    note: 'Giao giờ hành chính',
+    paymentMethod: 'COD',
+    total: 1150000,
+    totalMoney: 1150000,
+    status: 'completed',
+    paymentStatus: 'paid',
+    codStatus: 'reconciled',
+    amountPaid: 1150000,
+    amountRefunded: 0,
+    carrier: 'Giao Hàng Nhanh (GHN)',
+    trackingNumber: 'GHN982101',
+    step: 4,
+    createdAt: new Date(Date.now() - 3 * 86400000),
+    returnRequests: [],
+    refundRequests: [],
+    statusHistory: [
+      { fromStatus: '', toStatus: 'pending', action: 'Đặt hàng thành công', actor: 'Khách hàng', note: 'Phương thức thanh toán: COD', timestamp: new Date(Date.now() - 3 * 86400000) },
+      { fromStatus: 'pending', toStatus: 'completed', action: 'Giao hàng thành công & Hoàn tất', actor: 'Admin', note: 'Đã đối soát COD', timestamp: new Date(Date.now() - 1 * 86400000) }
+    ],
+    items: [
+      { id: 'p6', productId: 'p6', name: 'RG 1/144 Hi-Nu Gundam', sku: 'RG-HINU', grade: 'RG', scale: '1/144', image: 'assets/products/rg-hinu.jpg', quantity: 1, price: 1150000, subtotal: 1150000 }
+    ]
+  },
+  {
+    id: '672000000000000000982102',
+    _id: '672000000000000000982102',
+    code: 'HD982102',
+    userId: 'u-cust-2',
+    recipient: 'Nguyễn Hoàng Lân',
+    phone: '0907652267',
+    address: 'TP. Hồ Chí Minh, Việt Nam',
+    note: '',
+    paymentMethod: 'COD',
+    total: 380000,
+    totalMoney: 380000,
+    status: 'pending',
+    paymentStatus: 'unpaid',
+    codStatus: 'uncollected',
+    amountPaid: 0,
+    amountRefunded: 0,
+    carrier: 'Giao Hàng Nhanh (GHN)',
+    trackingNumber: 'GHN982102',
+    step: 1,
+    createdAt: new Date(Date.now() - 3600000),
+    returnRequests: [],
+    refundRequests: [],
+    statusHistory: [
+      { fromStatus: '', toStatus: 'pending', action: 'Đặt hàng thành công', actor: 'Khách hàng', note: 'Phương thức thanh toán: COD', timestamp: new Date(Date.now() - 3600000) }
+    ],
+    items: [
+      { id: 'p3', productId: 'p3', name: 'HG 1/144 Gundam Aerial', sku: 'HG-AERIAL', grade: 'HG', scale: '1/144', image: 'assets/products/hg-aerial.jpg', quantity: 1, price: 380000, subtotal: 380000 }
+    ]
+  }
+];
+
+function getFallbackUsers() {
+  return fallbackUsers;
+}
+
+function findFallbackUserByEmail(email) {
+  if (!email) return null;
+  const clean = String(email).trim().toLowerCase();
+  return fallbackUsers.find(u => u.email.toLowerCase() === clean) || null;
+}
+
+function findFallbackUserById(id) {
+  if (!id) return null;
+  const clean = String(id).trim();
+  return fallbackUsers.find(u => String(u._id) === clean || String(u.id) === clean) || null;
+}
+
+function addFallbackUser(data) {
+  const newId = data._id || data.id || ('u-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+  const userObj = {
+    id: String(newId),
+    _id: String(newId),
+    name: data.name || 'Thành viên Gunpla',
+    email: String(data.email || '').trim().toLowerCase(),
+    password: data.password || '',
+    plainPassword: data.plainPassword || '',
+    role: data.role || 'user',
+    status: data.status || 'active',
+    phone: data.phone || '',
+    address: data.address || '',
+    createdAt: data.createdAt || new Date()
+  };
+  const existingIdx = fallbackUsers.findIndex(u => u.email === userObj.email);
+  if (existingIdx > -1) {
+    fallbackUsers[existingIdx] = userObj;
+  } else {
+    fallbackUsers.unshift(userObj);
+  }
+  return userObj;
+}
+
+function getFallbackBills() {
+  return fallbackBills;
+}
+
+function findFallbackBillById(id) {
+  if (!id) return null;
+  const clean = String(id).trim();
+  return fallbackBills.find(b => String(b._id) === clean || String(b.id) === clean || String(b.code).toLowerCase() === clean.toLowerCase()) || null;
+}
+
+function addFallbackBill(billData) {
+  fallbackBills.unshift(billData);
+  return billData;
+}
+
 module.exports = {
   getFallbackProducts,
-  getFallbackCategories
+  getFallbackCategories,
+  getFallbackUsers,
+  findFallbackUserByEmail,
+  findFallbackUserById,
+  addFallbackUser,
+  getFallbackBills,
+  findFallbackBillById,
+  addFallbackBill
 };

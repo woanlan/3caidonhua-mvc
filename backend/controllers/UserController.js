@@ -4,10 +4,34 @@
 // -> Phân quyền vai trò (User/Staff/Admin) -> Khóa / Mở khóa tài khoản
 // ====================================================================================
 
+const mongoose = require('mongoose');
 const userModel = require('../models/user');
 const billModel = require('../models/bill');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const {
+    getFallbackUsers,
+    findFallbackUserByEmail,
+    findFallbackUserById,
+    addFallbackUser,
+    getFallbackBills
+} = require('../utils/fallbackStore');
+
+const isDbConnected = () => mongoose.connection.readyState === 1;
+
+/**
+ * [NGHIỆP VỤ XÁC THỰC] - Helper giải mã người dùng từ Bearer Token JWT hoặc Cookie
+ */
+function getAuthTokenUser(req) {
+    if (req.headers.authorization) {
+        try {
+            const token = req.headers.authorization.split(' ')[1];
+            const data = jwt.verify(token, process.env.JWT_SECRET || 'shhhhh');
+            if (data && data.user) return data.user;
+        } catch (_) {}
+    }
+    return null;
+}
 
 /**
  * [NGHIỆP VỤ XÁC THỰC] - Helper lấy ID người dùng từ Cookie, Header x-user-id hoặc Bearer Token JWT
@@ -17,13 +41,8 @@ const jwt = require('jsonwebtoken');
 function getAuthUserId(req) {
     if (req.cookies?.userId) return req.cookies.userId;
     if (req.headers['x-user-id']) return req.headers['x-user-id'];
-    if (req.headers.authorization) {
-        try {
-            const token = req.headers.authorization.split(' ')[1];
-            const data = jwt.verify(token, process.env.JWT_SECRET || 'shhhhh');
-            if (data && data.user) return data.user._id || data.user.id;
-        } catch (_) {}
-    }
+    const tokenUser = getAuthTokenUser(req);
+    if (tokenUser) return tokenUser._id || tokenUser.id;
     return null;
 }
 
@@ -35,6 +54,30 @@ const UserController = {
      */
     getAll: async (req, res) => {
         try {
+            if (!isDbConnected()) {
+                const users = getFallbackUsers();
+                const bills = getFallbackBills();
+                const result = users.map(u => {
+                    const userOrders = bills.filter(b => b.userId === u.id || b.recipient === u.name);
+                    const completedOrders = userOrders.filter(b => b.status === 'completed');
+                    const totalSpent = completedOrders.reduce((sum, b) => sum + (b.totalMoney || b.total || 0), 0);
+                    return {
+                        id: String(u._id || u.id),
+                        _id: String(u._id || u.id),
+                        name: u.name,
+                        email: u.email,
+                        role: u.role || 'user',
+                        status: u.status || 'active',
+                        phone: u.phone || '',
+                        address: u.address || '',
+                        createdAt: u.createdAt,
+                        orderCount: userOrders.length,
+                        totalSpent
+                    };
+                });
+                return res.status(200).json(result);
+            }
+
             const rawUsers = await userModel.find().sort({ createdAt: -1 });
             const result = [];
 
@@ -70,6 +113,34 @@ const UserController = {
      */
     getById: async (req, res) => {
         try {
+            if (!isDbConnected()) {
+                const u = findFallbackUserById(req.params.id);
+                if (!u) return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+                const userOrders = getFallbackBills().filter(b => b.userId === u.id);
+                const completedOrders = userOrders.filter(b => b.status === 'completed');
+                const totalSpent = completedOrders.reduce((sum, b) => sum + (b.totalMoney || b.total || 0), 0);
+                return res.status(200).json({
+                    id: String(u._id || u.id),
+                    _id: String(u._id || u.id),
+                    name: u.name,
+                    email: u.email,
+                    role: u.role || 'user',
+                    status: u.status || 'active',
+                    phone: u.phone || '',
+                    address: u.address || '',
+                    createdAt: u.createdAt,
+                    orderCount: userOrders.length,
+                    totalSpent,
+                    orders: userOrders.map(b => ({
+                        id: b.id,
+                        code: b.code,
+                        total: b.totalMoney || b.total,
+                        status: b.status,
+                        createdAt: b.createdAt
+                    }))
+                });
+            }
+
             const u = await userModel.findById(req.params.id).select('-password');
             if (!u) return res.status(404).json({ message: 'Không tìm thấy người dùng' });
 
@@ -104,25 +175,47 @@ const UserController = {
 
     /**
      * [NGHIỆP VỤ XÁC THỰC] - 3. Lấy thông tin tài khoản hiện tại đang đăng nhập
-     * Endpoint: GET /users/me hoặc GET /api/users/me
+     * Endpoint: GET /users/me hoặc GET /api/users/me hoặc GET /api/auth/me
      */
     getMe: async (req, res) => {
         try {
             const userId = getAuthUserId(req);
-            if (!userId) {
+            const tokenUser = getAuthTokenUser(req);
+            if (!userId && !tokenUser) {
                 return res.status(401).json({ error: 'Chưa đăng nhập' });
             }
-            const user = await userModel.findById(userId);
+
+            let user = null;
+            if (isDbConnected() && userId && /^[0-9a-fA-F]{24}$/.test(String(userId))) {
+                try {
+                    user = await userModel.findById(userId);
+                } catch (_) {}
+            }
+            if (!user && userId) {
+                user = findFallbackUserById(userId);
+            }
+            if (!user && tokenUser?.email) {
+                if (isDbConnected()) {
+                    try {
+                        user = await userModel.findOne({ email: tokenUser.email.toLowerCase() });
+                    } catch (_) {}
+                }
+                if (!user) {
+                    user = findFallbackUserByEmail(tokenUser.email) || tokenUser;
+                }
+            }
+
             if (!user) {
                 return res.status(401).json({ error: 'Tài khoản không tồn tại' });
             }
             if (user.status === 'locked') {
                 return res.status(403).json({ error: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.' });
             }
+            const uid = (user._id || user.id).toString();
             return res.status(200).json({
                 status: 1,
-                id: user._id.toString(),
-                _id: user._id.toString(),
+                id: uid,
+                _id: uid,
                 name: user.name,
                 email: user.email,
                 role: user.role || 'user',
@@ -142,21 +235,42 @@ const UserController = {
     updateMe: async (req, res) => {
         try {
             const userId = getAuthUserId(req);
-            if (!userId) return res.status(401).json({ error: 'Chưa đăng nhập' });
+            const tokenUser = getAuthTokenUser(req);
+            if (!userId && !tokenUser) return res.status(401).json({ error: 'Chưa đăng nhập' });
 
             const { name, phone, address } = req.body;
-            const updated = await userModel.findByIdAndUpdate(userId, { name, phone, address }, { new: true });
+            let updated = null;
+
+            if (isDbConnected() && userId && /^[0-9a-fA-F]{24}$/.test(String(userId))) {
+                updated = await userModel.findByIdAndUpdate(userId, { name, phone, address }, { new: true });
+            }
+
+            if (!updated) {
+                const fbUser = findFallbackUserById(userId) || (tokenUser?.email ? findFallbackUserByEmail(tokenUser.email) : null);
+                if (fbUser) {
+                    if (name !== undefined) fbUser.name = name;
+                    if (phone !== undefined) fbUser.phone = phone;
+                    if (address !== undefined) fbUser.address = address;
+                    updated = fbUser;
+                } else if (tokenUser) {
+                    updated = addFallbackUser({ ...tokenUser, name: name || tokenUser.name, phone: phone || tokenUser.phone, address: address || tokenUser.address });
+                }
+            }
+
+            if (!updated) return res.status(404).json({ message: 'Không tìm thấy tài khoản' });
+
+            const uid = (updated._id || updated.id).toString();
             return res.status(200).json({
                 status: 1,
                 message: 'Cập nhật thông tin thành công',
-                id: updated._id.toString(),
-                _id: updated._id.toString(),
+                id: uid,
+                _id: uid,
                 name: updated.name,
                 email: updated.email,
-                role: updated.role,
-                status: updated.status,
-                phone: updated.phone,
-                address: updated.address
+                role: updated.role || 'user',
+                status: updated.status || 'active',
+                phone: updated.phone || '',
+                address: updated.address || ''
             });
         } catch (err) {
             return res.status(500).json({ message: err.message });
@@ -166,22 +280,25 @@ const UserController = {
     /**
      * [NGHIỆP VỤ ĐĂNG KÝ TÀI KHOẢN] - 5. Đăng ký tài khoản mới (Mã hóa Bcrypt Hash)
      * Endpoint: POST /auth/register hoặc POST /api/auth/register hoặc POST /users/register
-     * Nghiệp vụ:
-     *  - Kiểm tra email hợp lệ, kiểm tra trùng lặp email
-     *  - Kiểm tra mật khẩu khớp với confirm_password
-     *  - Mã hóa mật khẩu an toàn với bcrypt salt 10 rounds
-     *  - Tạo document trong MongoDB với role mặc định là 'user'
      */
     create: async (req, res) => {
         try {
-            const { name, email, password, confirm_password, phone, address, role } = req.body;
+            const { name, email, password, confirm_password, confirmPassword, phone, address, role } = req.body;
             if (!email || !password) {
                 return res.status(400).json({ status: 0, message: 'Vui lòng điền đầy đủ email và mật khẩu.' });
             }
-            if (confirm_password && password !== confirm_password) {
+            const confirmPw = confirmPassword !== undefined ? confirmPassword : confirm_password;
+            if (confirmPw && password !== confirmPw) {
                 return res.status(400).json({ status: 0, message: 'Mật khẩu xác nhận không khớp.' });
             }
-            const existing = await userModel.findOne({ email: email.trim().toLowerCase() });
+
+            const cleanEmail = email.trim().toLowerCase();
+
+            // Kiểm tra trùng email trên cả MongoDB (nếu đang kết nối) và Fallback Store
+            let existing = findFallbackUserByEmail(cleanEmail);
+            if (!existing && isDbConnected()) {
+                existing = await userModel.findOne({ email: cleanEmail });
+            }
             if (existing) {
                 return res.status(400).json({ status: 0, message: 'Email này đã được sử dụng. Vui lòng đăng nhập hoặc dùng email khác.' });
             }
@@ -190,27 +307,58 @@ const UserController = {
             const salt = bcrypt.genSaltSync(10);
             const hashedPassword = bcrypt.hashSync(password, salt);
 
-            // BƯỚC 2: LƯU TÀI KHOẢN MỚI VÀO MONGODB
-            const newUser = await userModel.create({
-                name: name || 'Thành viên Gunpla',
-                email: email.trim().toLowerCase(),
-                password: hashedPassword,
-                phone: phone || '',
-                address: address || '',
-                role: role || 'user',
-                status: 'active'
-            });
+            let createdUser = null;
+            if (isDbConnected()) {
+                // BƯỚC 2A: LƯU TÀI KHOẢN MỚI VÀO MONGODB
+                const newUser = await userModel.create({
+                    name: name || 'Thành viên Gunpla',
+                    email: cleanEmail,
+                    password: hashedPassword,
+                    phone: phone || '',
+                    address: address || '',
+                    role: role || 'user',
+                    status: 'active'
+                });
+                createdUser = {
+                    _id: newUser._id.toString(),
+                    id: newUser._id.toString(),
+                    name: newUser.name,
+                    email: newUser.email,
+                    password: hashedPassword,
+                    plainPassword: password,
+                    phone: newUser.phone || '',
+                    address: newUser.address || '',
+                    role: newUser.role || 'user',
+                    status: 'active',
+                    createdAt: newUser.createdAt
+                };
+                addFallbackUser(createdUser);
+            } else {
+                // BƯỚC 2B: LƯU TÀI KHOẢN MỚI VÀO BỘ NHỚ FALLBACK (TRÊN RENDER KHI KHÔNG CÓ MONGODB LOCAL)
+                createdUser = addFallbackUser({
+                    name: name || 'Thành viên Gunpla',
+                    email: cleanEmail,
+                    password: hashedPassword,
+                    plainPassword: password,
+                    phone: phone || '',
+                    address: address || '',
+                    role: role || 'user',
+                    status: 'active'
+                });
+            }
 
             return res.status(201).json({
                 status: 1,
                 message: 'Đăng ký tài khoản thành công! Vui lòng đăng nhập.',
-                id: newUser._id.toString(),
-                email: newUser.email,
-                name: newUser.name,
+                id: createdUser.id,
+                _id: createdUser._id,
+                email: createdUser.email,
+                name: createdUser.name,
                 user: {
-                    _id: newUser._id.toString(),
-                    email: newUser.email,
-                    name: newUser.name
+                    _id: createdUser._id,
+                    id: createdUser.id,
+                    email: createdUser.email,
+                    name: createdUser.name
                 }
             });
         } catch (err) {
@@ -221,13 +369,6 @@ const UserController = {
     /**
      * [NGHIỆP VỤ ĐĂNG NHẬP & CẤP TOKEN JWT] - 6. Xác thực đăng nhập
      * Endpoint: POST /auth/login hoặc POST /api/auth/login hoặc POST /users/login
-     * Nghiệp vụ:
-     *  - So sánh mật khẩu bằng `bcrypt.compareSync`
-     *  - Kiểm tra trạng thái tài khoản (nếu status === 'locked' -> Chặn đăng nhập)
-     *  - Cấp cặp Token JWT chuẩn bảo mật:
-     *      * access_token: Thời hạn 1 giờ (60 phút) dùng trong header Authorization: Bearer
-     *      * refresh_token: Thời hạn 90 ngày dùng để lấy access_token mới khi hết hạn
-     *  - Đặt Cookie `userId` phục vụ session giỏ hàng và duyệt web
      */
     login: async (req, res) => {
         try {
@@ -236,13 +377,26 @@ const UserController = {
                 return res.status(400).json({ status: 0, message: 'Vui lòng nhập email và mật khẩu' });
             }
 
-            const user = await userModel.findOne({ email: email.trim().toLowerCase() });
+            const cleanEmail = email.trim().toLowerCase();
+            let user = null;
+
+            if (isDbConnected()) {
+                user = await userModel.findOne({ email: cleanEmail });
+            }
+            if (!user) {
+                user = findFallbackUserByEmail(cleanEmail);
+            }
+
             if (!user) {
                 return res.status(401).json({ status: 0, message: 'Email hoặc mật khẩu không chính xác' });
             }
 
-            // SO SÁNH MẬT KHẨU BĂM BCRYPT
-            const isPasswordMatch = (user.password && user.password.startsWith('$2') && bcrypt.compareSync(password, user.password)) || (user.password === password);
+            // SO SÁNH MẬT KHẨU BĂM BCRYPT HOẶC PLAIN PASSWORD
+            const isPasswordMatch =
+                (user.password && user.password.startsWith('$2') && bcrypt.compareSync(password, user.password)) ||
+                (user.password === password) ||
+                (user.plainPassword && user.plainPassword === password);
+
             if (!isPasswordMatch) {
                 return res.status(401).json({ status: 0, message: 'Email hoặc mật khẩu không chính xác' });
             }
@@ -252,9 +406,10 @@ const UserController = {
                 return res.status(403).json({ status: 0, message: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.' });
             }
 
+            const uid = (user._id || user.id).toString();
             const safeUser = {
-                _id: user._id.toString(),
-                id: user._id.toString(),
+                _id: uid,
+                id: uid,
                 name: user.name,
                 email: user.email,
                 role: user.role || 'user',
@@ -267,18 +422,18 @@ const UserController = {
             const access_token = jwt.sign({ user: safeUser }, process.env.JWT_SECRET || 'shhhhh', { expiresIn: 60 * 60 });
             const refresh_token = jwt.sign({ user: safeUser }, process.env.JWT_SECRET || 'shhhhh', { expiresIn: 90 * 24 * 60 * 60 });
 
-            res.cookie('userId', user._id.toString(), { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 });
+            res.cookie('userId', uid, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000, sameSite: 'lax' });
             return res.status(200).json({
                 status: 1,
                 message: 'Đăng nhập thành công',
-                id: user._id.toString(),
-                _id: user._id.toString(),
+                id: uid,
+                _id: uid,
                 name: user.name,
                 email: user.email,
                 role: user.role || 'user',
                 status: user.status || 'active',
-                phone: user.phone,
-                address: user.address,
+                phone: user.phone || '',
+                address: user.address || '',
                 access_token,
                 refresh_token,
                 user: safeUser
@@ -326,6 +481,12 @@ const UserController = {
      */
     update: async (req, res) => {
         try {
+            if (!isDbConnected()) {
+                const u = findFallbackUserById(req.params.id);
+                if (!u) return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+                Object.assign(u, req.body);
+                return res.status(200).json(u);
+            }
             const updated = await userModel.findByIdAndUpdate(req.params.id, req.body, { new: true }).select('-password');
             if (!updated) return res.status(404).json({ message: 'Không tìm thấy người dùng' });
             return res.status(200).json(updated);
@@ -336,10 +497,7 @@ const UserController = {
 
     /**
      * [NGHIỆP VỤ KHÓA TÀI KHOẢN] - 9. Khóa / Mở khóa tài khoản (Active <-> Locked)
-     * Endpoint: POST /users/:id/toggle-status hoặc POST /api/users/:id/toggle-status
-     * Ràng buộc nghiệp vụ:
-     *  - Admin không thể tự khóa tài khoản của chính mình
-     *  - Không thể khóa Quản trị viên (Admin) duy nhất còn lại của hệ thống
+     * Endpoint: POST /users/:id/toggle-status hoặc PATCH /api/users/:id/toggle-status
      */
     toggleStatus: async (req, res) => {
         try {
@@ -348,6 +506,23 @@ const UserController = {
 
             if (currentUserId && currentUserId.toString() === targetId.toString()) {
                 return res.status(400).json({ status: 0, message: 'Bạn không thể tự khóa tài khoản của chính mình.' });
+            }
+
+            if (!isDbConnected()) {
+                const targetUser = findFallbackUserById(targetId);
+                if (!targetUser) return res.status(404).json({ status: 0, message: 'Không tìm thấy tài khoản.' });
+                if (targetUser.role === 'admin' && targetUser.status === 'active') {
+                    const activeAdminCount = getFallbackUsers().filter(u => u.role === 'admin' && u.status === 'active').length;
+                    if (activeAdminCount <= 1) {
+                        return res.status(400).json({ status: 0, message: 'Không thể khóa Quản trị viên (Admin) duy nhất còn lại.' });
+                    }
+                }
+                targetUser.status = (targetUser.status === 'active') ? 'locked' : 'active';
+                return res.status(200).json({
+                    status: 1,
+                    message: `Đã ${targetUser.status === 'active' ? 'mở khóa' : 'khóa'} tài khoản [${targetUser.email}].`,
+                    user: targetUser
+                });
             }
 
             const targetUser = await userModel.findById(targetId);
@@ -381,9 +556,7 @@ const UserController = {
 
     /**
      * [NGHIỆP VỤ PHÂN QUYỀN VAI TRÒ] - 10. Thay đổi vai trò người dùng (user, staff, admin)
-     * Endpoint: POST /users/:id/change-role hoặc POST /api/users/:id/change-role
-     * Ràng buộc nghiệp vụ:
-     *  - Không thể hạ quyền tài khoản Admin cuối cùng của hệ thống
+     * Endpoint: POST /users/:id/change-role hoặc PATCH /api/users/:id/role
      */
     changeRole: async (req, res) => {
         try {
@@ -391,6 +564,23 @@ const UserController = {
             const { role } = req.body;
             if (!['user', 'staff', 'admin'].includes(role)) {
                 return res.status(400).json({ status: 0, message: 'Vai trò không hợp lệ.' });
+            }
+
+            if (!isDbConnected()) {
+                const targetUser = findFallbackUserById(targetId);
+                if (!targetUser) return res.status(404).json({ status: 0, message: 'Không tìm thấy tài khoản.' });
+                if (targetUser.role === 'admin' && role !== 'admin') {
+                    const adminCount = getFallbackUsers().filter(u => u.role === 'admin').length;
+                    if (adminCount <= 1) {
+                        return res.status(400).json({ status: 0, message: 'Không thể hạ quyền Quản trị viên (Admin) cuối cùng của hệ thống.' });
+                    }
+                }
+                targetUser.role = role;
+                return res.status(200).json({
+                    status: 1,
+                    message: `Đã cập nhật vai trò tài khoản [${targetUser.email}] sang "${role}".`,
+                    user: targetUser
+                });
             }
 
             const targetUser = await userModel.findById(targetId);
@@ -425,10 +615,6 @@ const UserController = {
     /**
      * [NGHIỆP VỤ XÓA TÀI KHOẢN AN TOÀN] - 11. Xóa người dùng
      * Endpoint: DELETE /users/:id hoặc DELETE /api/users/:id
-     * Ràng buộc nghiệp vụ:
-     *  - Không thể tự xóa tài khoản của chính mình
-     *  - Không thể xóa Admin duy nhất còn lại
-     *  - Nếu tài khoản đã từng mua hàng (phát sinh hóa đơn) -> Chuyển sang trạng thái "Khóa" để bảo toàn lịch sử bán hàng
      */
     remove: async (req, res) => {
         try {
@@ -437,6 +623,14 @@ const UserController = {
 
             if (currentUserId && currentUserId.toString() === targetId.toString()) {
                 return res.status(400).json({ status: 0, message: 'Bạn không thể tự xóa tài khoản của chính mình.' });
+            }
+
+            if (!isDbConnected()) {
+                const users = getFallbackUsers();
+                const idx = users.findIndex(u => String(u._id) === String(targetId) || String(u.id) === String(targetId));
+                if (idx === -1) return res.status(404).json({ status: 0, message: 'Không tìm thấy tài khoản.' });
+                const [deleted] = users.splice(idx, 1);
+                return res.status(200).json({ status: 1, message: 'Đã xóa tài khoản thành công.', deleted });
             }
 
             const targetUser = await userModel.findById(targetId);
