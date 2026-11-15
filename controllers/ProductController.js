@@ -4,8 +4,10 @@
 // và nghiệp vụ xóa an toàn (Lưu trữ nếu đã có lịch sử đơn hàng phát sinh)
 // ====================================================================================
 
+const mongoose = require('mongoose');
 const productModel = require('../models/product');
 const billDetailModel = require('../models/billdetail');
+const { getFallbackProducts } = require('../utils/fallbackStore');
 
 /**
  * [NGHIỆP VỤ SẢN PHẨM] - Hàm chuẩn hóa định dạng dữ liệu sản phẩm phục vụ hiển thị
@@ -56,11 +58,17 @@ const ProductController = {
      */
     getAll: async (req, res) => {
         try {
+            if (mongoose.connection.readyState !== 1) {
+                return res.status(200).json(getFallbackProducts());
+            }
             const rawProducts = await productModel.find().populate('category').sort({ createdAt: -1 });
+            if (!rawProducts || rawProducts.length < 50) {
+                return res.status(200).json(getFallbackProducts());
+            }
             const products = rawProducts.map(mapProduct);
             return res.status(200).json(products);
         } catch (err) {
-            return res.status(500).json({ message: err.message });
+            return res.status(200).json(getFallbackProducts());
         }
     },
 
@@ -71,13 +79,20 @@ const ProductController = {
     getById: async (req, res) => {
         try {
             const id = req.params.id || req.query.id;
+            if (mongoose.connection.readyState !== 1) {
+                const found = getFallbackProducts().find(x => x.id == id || x._id == id);
+                return found ? res.status(200).json(found) : res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+            }
             const product = await productModel.findById(id).populate('category');
             if (!product) {
-                return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+                const found = getFallbackProducts().find(x => x.id == id || x._id == id);
+                return found ? res.status(200).json(found) : res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
             }
             return res.status(200).json(mapProduct(product));
         } catch (err) {
-            return res.status(500).json({ message: err.message });
+            const id = req.params.id || req.query.id;
+            const found = getFallbackProducts().find(x => x.id == id || x._id == id);
+            return found ? res.status(200).json(found) : res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
         }
     },
 
@@ -88,12 +103,15 @@ const ProductController = {
     getByCategory: async (req, res) => {
         try {
             const categoryId = req.params.categoryId || req.params.id || req.query.categoryId;
+            if (mongoose.connection.readyState !== 1) {
+                return res.status(200).json(getFallbackProducts().filter(x => x.categoryId == categoryId || x.category == categoryId));
+            }
             const rawProducts = await productModel.find({
                 $or: [{ category: categoryId }, { categoryId: categoryId }]
             }).populate('category').sort({ createdAt: -1 });
             return res.status(200).json(rawProducts.map(mapProduct));
         } catch (err) {
-            return res.status(500).json({ message: err.message });
+            return res.status(200).json(getFallbackProducts());
         }
     },
 

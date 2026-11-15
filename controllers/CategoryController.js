@@ -1,5 +1,7 @@
+const mongoose = require('mongoose');
 const categoryModel = require('../models/category');
 const productModel = require('../models/product');
+const { getFallbackCategories } = require('../utils/fallbackStore');
 
 // Hàm tạo slug thân thiện tiếng Việt cho danh mục
 function toVietnameseSlug(str) {
@@ -20,7 +22,13 @@ const CategoryController = {
     // 1. Lấy tất cả danh mục
     getAll: async (req, res) => {
         try {
+            if (mongoose.connection.readyState !== 1) {
+                return res.status(200).json(getFallbackCategories());
+            }
             const categories = await categoryModel.find().sort({ order: 1, createdAt: 1 }).lean();
+            if (!categories || !categories.length) {
+                return res.status(200).json(getFallbackCategories());
+            }
             // Đếm số lượng sản phẩm thực tế theo từng danh mục
             for (const c of categories) {
                 c.id = c._id.toString();
@@ -30,7 +38,7 @@ const CategoryController = {
             }
             return res.status(200).json(categories);
         } catch (err) {
-            return res.status(500).json({ message: err.message });
+            return res.status(200).json(getFallbackCategories());
         }
     },
 

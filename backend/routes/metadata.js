@@ -1,17 +1,25 @@
 var express = require('express');
 var router = express.Router();
+var mongoose = require('mongoose');
 var modelCategory = require('../models/category');
+var { getFallbackCategories } = require('../utils/fallbackStore');
 
 router.get('/', async function(req, res, next) {
   try {
-    const rawCategories = await modelCategory.find();
-    const categories = rawCategories.map(c => ({
-      id: c._id.toString(),
-      _id: c._id.toString(),
-      name: c.name,
-      slug: c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-      description: c.description || ''
-    }));
+    let categories = [];
+    if (mongoose.connection.readyState === 1) {
+      const rawCategories = await modelCategory.find();
+      categories = rawCategories.map(c => ({
+        id: c._id.toString(),
+        _id: c._id.toString(),
+        name: c.name,
+        slug: c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+        description: c.description || ''
+      }));
+    }
+    if (!categories.length) {
+      categories = getFallbackCategories();
+    }
 
     const brands = [
       { id: 1, name: 'Bandai Spirits' },

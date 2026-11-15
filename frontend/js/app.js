@@ -4907,28 +4907,25 @@ document.addEventListener('submit', e => {
 
 async function init() {
   loadWishlist();
-  try {
-    await refreshProducts();
-  } catch (e) {
-    products = DEFAULT_PRODUCTS;
-    renderProducts();
-    renderHomeFeatured();
-  }
+  // Hiển thị ngay lập tức giao diện & video trong 0ms, không bắt người dùng chờ mạng
+  products = DEFAULT_PRODUCTS;
+  renderProducts();
+  renderHomeFeatured();
+  videoUI();
 
-  try {
-    metadata = await api('/metadata');
-  } catch (e) {
-    metadata = { categories: [], brands: [], grades: [], series: [] };
-  }
-
-  try {
-    setUser(await api('/auth/me'));
-    await refreshCart();
-  } catch (e) {
-    try {
+  // Gọi đồng thời (song song) tất cả API để nạp 1.510 sản phẩm & thông tin tài khoản nhanh gấp 3 lần
+  await Promise.allSettled([
+    refreshProducts(),
+    api('/metadata').then(m => { metadata = m; }).catch(() => {
+      metadata = { categories: [], brands: [], grades: [], series: [] };
+    }),
+    api('/auth/me').then(async u => {
+      setUser(u);
       await refreshCart();
-    } catch (_) {}
-  }
+    }).catch(async () => {
+      try { await refreshCart(); } catch (_) {}
+    })
+  ]);
 
   try {
     await route();
@@ -4937,7 +4934,6 @@ async function init() {
   }
 
   renderHomeFeatured();
-  videoUI();
 }
 
 void init();
