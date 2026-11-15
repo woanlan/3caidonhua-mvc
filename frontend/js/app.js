@@ -268,11 +268,20 @@ function getProductDiscount(p) {
     return discountRates[Math.abs(hash) % discountRates.length];
 }
 
+function resolveImg(url) {
+    if (!url) return 'assets/hero-poster.jpg';
+    const s = String(url).trim();
+    if (s.startsWith('//')) return 'https:' + s;
+    if (s.startsWith('http://') || s.startsWith('https://') || s.startsWith('data:')) return s;
+    if (s.startsWith('/assets/')) return s.slice(1);
+    return s;
+}
+
 function renderProductCardHtml(p) {
     const pid = p.id || p._id || p.variantId;
     const gradeClass = (p.grade || 'kit').toLowerCase().replace(/[^a-z0-9]/g, '');
     const inStock = ((p.stock !== undefined ? p.stock : p.quantity) ?? 0) > 0;
-    const imgSrc = esc(p.image || '/assets/hero-poster.jpg');
+    const imgSrc = esc(resolveImg(p.image || 'assets/hero-poster.jpg'));
     const disc = getProductDiscount(p);
     const oldPrice = p.originalPrice || Math.round((p.price / (1 - disc / 100)) / 10000) * 10000;
     const brandName = esc(p.brand || 'Bandai Spirits');
@@ -284,7 +293,7 @@ function renderProductCardHtml(p) {
       <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
     </button>
     <a href="#product-${pid}" class="product-image">
-      <img src="${imgSrc}" loading="lazy" width="300" height="300" alt="${esc(p.name)}" onerror="this.src='/assets/hero-poster.jpg'">
+      <img src="${imgSrc}" referrerpolicy="no-referrer" loading="lazy" width="300" height="300" alt="${esc(p.name)}" onerror="this.onerror=null;this.src='assets/hero-poster.jpg'">
       <span class="gdc-discount-badge">-${disc}%</span>
       <span class="image-badge badge-${gradeClass}">${gradeLabel}</span>
       <span class="image-note">${brandName}</span>
@@ -347,12 +356,69 @@ function renderHomeFeatured() {
     }
 }
 
+async function loadFallbackGundamchatProducts() {
+    try {
+        const res = await fetch('assets/gundamchat_products.json');
+        if (!res.ok) return DEFAULT_PRODUCTS;
+        const rawData = await res.json();
+        const seen = new Set(DEFAULT_PRODUCTS.map(p => p.name.trim()));
+        const extra = [];
+        rawData.forEach((p, idx) => {
+            if (!p || !p.name) return;
+            const name = p.name.trim();
+            if (seen.has(name)) return;
+            seen.add(name);
+            const image = p.featured_image || (p.images && p.images[0] && (typeof p.images[0] === 'string' ? p.images[0] : p.images[0].src)) || '';
+            if (!image) return;
+            const images = Array.isArray(p.images) ? p.images.map(img => typeof img === 'string' ? img : (img.src || '')).filter(Boolean) : [image];
+            let price = 250000;
+            if (p.variants && p.variants[0] && p.variants[0].price) price = Math.round(Number(p.variants[0].price));
+            else if (p.price) price = Math.round(Number(p.price));
+            if (isNaN(price) || price <= 0) price = 250000;
+            let grade = 'HG', scale = '1/144', category = 'Mô hình Gundam';
+            if (/one piece|luffy|zoro|sanji|thousand sunny|going merry|red force/i.test(name)) { category = 'Mô hình One Piece'; grade = 'ONEPIECE'; scale = 'Grand Ship'; }
+            else if (/bút|kìm|marker|kẻ lằn|sơn|tool|dao|nhíp|dụng cụ|action base|giá đỡ|panel line|dũa|giũa|chà nhám/i.test(name)) { category = 'Bút kẻ & Dụng cụ'; grade = 'TOOLS'; scale = 'Phụ kiện'; }
+            else if (/\bPG\b|1\/60/i.test(name)) { grade = 'PG'; scale = '1/60'; }
+            else if (/\bMGEX\b/i.test(name)) { grade = 'MGEX'; scale = '1/100'; }
+            else if (/\bMG\b|1\/100/i.test(name)) { grade = 'MG'; scale = '1/100'; }
+            else if (/\bRG\b|Real Grade/i.test(name)) { grade = 'RG'; scale = '1/144'; }
+            else if (/\bSD\b|BB Senshi/i.test(name)) { grade = 'SD'; scale = 'Non-scale'; }
+            else if (/Mega Size|1\/48/i.test(name)) { grade = 'Mega Size'; scale = '1/48'; }
+            let brand = 'Bandai Spirits';
+            if (/daban/i.test(name)) brand = 'Daban';
+            else if (/jijia/i.test(name)) brand = 'Jijia';
+            else if (/snaa/i.test(name)) brand = 'SNAA';
+            extra.push({
+                id: String(p.id || ('gdc-' + idx)),
+                _id: String(p.id || ('gdc-' + idx)),
+                variantId: String(p.id || ('gdc-' + idx)),
+                sku: (p.variants && p.variants[0] && p.variants[0].sku) || ('GDC-' + (p.id || idx)),
+                name,
+                price,
+                stock: 12,
+                quantity: 12,
+                status: 'active',
+                grade,
+                scale,
+                category,
+                brand,
+                image,
+                images: images.length ? images : [image],
+                description: (p.content || '').replace(/<[^>]*>?/gm, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim() || `Mô hình chính hãng ${name}.`
+            });
+        });
+        return [...extra, ...DEFAULT_PRODUCTS];
+    } catch (_) {
+        return DEFAULT_PRODUCTS;
+    }
+}
+
 async function refreshProducts() {
     try {
         const list = await api('/products');
-        products = list && list.length ? list : DEFAULT_PRODUCTS;
+        products = (list && list.length > 26) ? list : await loadFallbackGundamchatProducts();
     } catch (e) {
-        products = DEFAULT_PRODUCTS;
+        products = await loadFallbackGundamchatProducts();
     }
     renderProducts();
     renderHomeFeatured();
@@ -370,12 +436,12 @@ function renderProductDetailPage(id) {
 
     currentDetailQty = 1;
     const inStock = p.stock > 0;
-    const galleryImages = (p.images && p.images.length > 0) ? p.images : [p.image || '/assets/hero-poster.jpg'];
+    const galleryImages = ((p.images && p.images.length > 0) ? p.images : [p.image || 'assets/hero-poster.jpg']).map(resolveImg);
 
     const thumbnailsHtml = galleryImages.map((imgUrl, idx) => {
         const isActive = idx === 0 ? 'active' : '';
         return `<button type="button" class="pdetail-thumb-btn ${isActive}" data-switch-thumb="${idx}" data-img-src="${esc(imgUrl)}" title="Ảnh chi tiết ${idx + 1}">
-      <img src="${esc(imgUrl)}" alt="${esc(p.name)} - Ảnh ${idx + 1}" onerror="this.src='/assets/hero-poster.jpg'">
+      <img src="${esc(imgUrl)}" referrerpolicy="no-referrer" alt="${esc(p.name)} - Ảnh ${idx + 1}" onerror="this.onerror=null;this.src='assets/hero-poster.jpg'">
     </button>`;
     }).join('');
 
@@ -413,7 +479,7 @@ function renderProductDetailPage(id) {
                   <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:8px;">
                     ${galleryImages.map((imgUrl, i) => `
                       <a href="${esc(imgUrl)}" target="_blank" title="Xem ảnh lớn ${i + 1}" style="display:block;border-radius:6px;overflow:hidden;border:1px solid #1e2638;background:#0a0e15;">
-                        <img src="${esc(imgUrl)}" alt="${esc(p.name)} - Ảnh ${i + 1}" style="width:100%;aspect-ratio:1/1;object-fit:cover;display:block;" onerror="this.src='/assets/hero-poster.jpg'">
+                        <img src="${esc(imgUrl)}" referrerpolicy="no-referrer" alt="${esc(p.name)} - Ảnh ${i + 1}" style="width:100%;aspect-ratio:1/1;object-fit:cover;display:block;" onerror="this.onerror=null;this.src='assets/hero-poster.jpg'">
                       </a>
                     `).join('')}
                   </div>
@@ -454,7 +520,7 @@ function renderProductDetailPage(id) {
               ${thumbnailsHtml}
             </div>
             <div class="pdetail-main-img-box">
-              <img id="pdetail-main-image" src="${esc(galleryImages[0] || p.image || '/assets/hero-poster.jpg')}" alt="${esc(p.name)}">
+              <img id="pdetail-main-image" src="${esc(galleryImages[0] || resolveImg(p.image) || 'assets/hero-poster.jpg')}" referrerpolicy="no-referrer" alt="${esc(p.name)}" onerror="this.onerror=null;this.src='assets/hero-poster.jpg'">
             </div>
           </div>
         </div>

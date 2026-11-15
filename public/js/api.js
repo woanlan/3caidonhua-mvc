@@ -1,5 +1,10 @@
 export let user = null;
 
+// Tự động trỏ về Backend cổng 3000 nếu chạy Frontend qua Live Server (cổng 5500, v.v.)
+const API_BASE = (typeof window !== 'undefined' && window.location.port && window.location.port !== '3000')
+  ? 'http://localhost:3000/api'
+  : '/api';
+
 export function setUser(value) {
   user = value;
   if (value && value.access_token) {
@@ -34,9 +39,9 @@ export async function api(path, method = 'GET', body) {
   };
 
   try {
-    response = await fetch('/api' + path, {
+    response = await fetch(API_BASE + path, {
       method,
-      credentials: 'same-origin',
+      credentials: 'include',
       headers,
       ...(body === undefined ? {} : { body: JSON.stringify(body) })
     });
@@ -59,9 +64,9 @@ export async function uploadFile(file) {
   const headers = {
     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
   };
-  const res = await fetch('/api/upload', {
+  const res = await fetch(API_BASE + '/upload', {
     method: 'POST',
-    credentials: 'same-origin',
+    credentials: 'include',
     headers,
     body: formData
   });
